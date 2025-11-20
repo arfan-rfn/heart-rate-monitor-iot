@@ -25,6 +25,7 @@ This project contains the Node.js/Express backend server that provides RESTful A
 - **Database:** MongoDB with Mongoose ODM
 - **Authentication:** Better Auth (session-based with MongoDB adapter)
 - **Security:** bcrypt, helmet, express-rate-limit, cors
+- **API Documentation:** OpenAPI 3.0 (Swagger), Zod schemas, auto-generated
 - **Testing:** Jest
 - **Development:** TypeScript, nodemon, tsx
 - **Process Management:** PM2 (production)
@@ -54,7 +55,52 @@ This project contains the Node.js/Express backend server that provides RESTful A
                     └────────┘   └────────────┘
 ```
 
-## TODO List
+## Project Requirements Summary (From Spec)
+
+### Core Requirements - **MANDATORY for all students**
+1. ✅ **Server:** Must use Node.js, Express, MongoDB - **MANDATORY** (Implemented)
+2. ✅ **RESTful APIs:** All endpoints must be RESTful with documentation - **MANDATORY** (Implemented)
+3. ✅ **HTTP Status Codes:** 200, 201, 400, 401, 404, 500 - **MANDATORY** (Implemented)
+4. ✅ **Token-Based Authentication:** Required for web app access - **MANDATORY** (Implemented via Better Auth)
+5. ✅ **API Key Authentication:** Required for IoT device - **MANDATORY** (Implemented)
+6. ✅ **Account Creation:** Email + strong password - **MANDATORY** (Implemented)
+7. ✅ **Account Management:** Update info (except email), add/remove devices - **MANDATORY** (Implemented)
+8. ✅ **Device Registration:** At least one device per user - **MANDATORY** (Implemented)
+9. ✅ **Measurement Submission:** POST endpoint with API key - **MANDATORY** (Implemented)
+10. ✅ **Weekly Summary View:** Average, min, max heart rate for 7 days - **MANDATORY** (Implemented)
+11. ✅ **Daily Detail View:** Plot heart rate and SpO2 for selected day - **MANDATORY** (Implemented)
+12. ✅ **Configurable Time Range:** Default 6 AM - 10 PM - **MANDATORY** (Implemented)
+13. ✅ **Configurable Frequency:** Default 30 minutes - **MANDATORY** (Implemented)
+
+### ECE 513 Additional Requirements - **MANDATORY for graduate students**
+14. ❌ **HTTPS:** Server must use HTTPS with SSL certificates - **MANDATORY for 513** (NOT implemented)
+15. ⚠️ **Physician Portal:** Separate registration, patient management - **MANDATORY for 513** (Partially implemented)
+
+### Extra Credit Opportunities
+16. ❌ **AI Health Assistant:** RAG with local LLM (+5 points) - **Optional** (NOT implemented)
+17. ❌ **Milestone Submission:** Submit by Nov 21 (+3 points) - **Optional** (Deadline passed)
+
+### Grading Rubric Checklist (From PDF Page 7-8)
+
+#### Backend Requirements (ECE 413: 35 points, ECE 513: 35 points)
+- [x] **#1: AWS running (1 pt)** - Server successfully running on AWS/localhost
+- [x] **#6: Strong password (ECE413: 3pts, ECE513: 2pts)** - Salted hash with bcrypt
+- [x] **#7: Device registration (1 pt)** - Able to register device
+- [x] **#8: Reading Data (1 pt)** - Sensor data endpoints
+- [x] **#9: Periodic reading every 30 mins (2 pts)** - Default config + configurable
+- [x] **#10: README file (2 pts)** - How to run project, endpoint docs, credentials
+- [x] **#11: Git Repo (2 pts)** - Well-described README.md in Markdown
+- [x] **#13: Coding style (2 pts)** - Commented code
+- [ ] **#17: Store data in device (ECE413: 3pts, ECE513: 2pts)** - Local storage up to 24 hours (IoT device feature, not API server)
+- [x] **#19: Localhost running (1 pt)** - Evidence of code running locally
+- [ ] **#20: HTTPS implementation (ECE513: 3pts)** - **MANDATORY for 513** - NOT implemented ❌
+- [x] **#21: Project Documentation (5 pts)** - In progress (see docs/)
+- [ ] **#22: Extra Credit LLM Assistant (5 pts)** - NOT implemented
+- [ ] **#23: Extra credit Milestone (3 pts)** - Deadline passed
+
+## TODO List & Project Requirements Tracker
+
+> **Note:** This tracker is aligned with the ECE 413/513 Final Project requirements. Tasks marked with 🎓 ECE 513 are only required for graduate students.
 
 ### Phase 1: Project Setup & Basic Infrastructure ✅
 
@@ -66,195 +112,264 @@ This project contains the Node.js/Express backend server that provides RESTful A
   - [x] Create project folder structure
 
 - [x] **Dependencies Installation**
-  - [x] Install Express.js
-  - [x] Install Mongoose (MongoDB ODM)
+  - [x] Install Express.js (v5.1.0) - **Required by spec**
+  - [x] Install Mongoose (MongoDB ODM v8.19.2) - **Required by spec**
   - [x] Install security packages (helmet, cors, express-rate-limit)
-  - [x] Install authentication packages (Better Auth with bcrypt)
+  - [x] Install authentication packages (Better Auth v1.3.29 with bcrypt)
   - [x] Install utility packages (dotenv, validator, morgan)
-  - [x] Install development dependencies (nodemon, jest, tsx)
+  - [x] Install development dependencies (nodemon, jest, tsx, TypeScript)
 
 - [x] **Environment Configuration**
   - [x] Create `.env.example` template
   - [x] Configure MongoDB connection string
   - [x] Set Better Auth secret key
   - [x] Configure server port
-  - [x] Add API key secrets
+  - [x] Add API key configuration
   - [x] Set CORS allowed origins
 
 - [x] **MongoDB Database Setup**
-  - [x] Set up MongoDB Atlas (cloud)
+  - [x] Set up MongoDB Atlas (cloud) or local MongoDB
   - [x] Create database named `hearttrack`
   - [x] Configure connection pooling
   - [x] Set up database indexes
   - [x] Test database connectivity
 
-### Phase 2: Database Models & Schemas ✅
+### Phase 2: Database Models & Schemas ⚠️ (Mostly Complete)
 
-- [x] **User Model** (via Better Auth)
-  - [x] Create User schema with email, password, name, role
-  - [x] Add password hashing pre-save hook (bcrypt with 10 salt rounds)
-  - [x] Add password comparison method
-  - [x] Add email validation
+- [x] **User Model** (via Better Auth) - **Required by spec**
+  - [x] Email address as username - **Required by spec**
+  - [x] Strong password requirement - **Required by spec**
+  - [x] Password hashing with bcrypt (10 salt rounds) - **Required by spec**
+  - [x] Password comparison method
+  - [x] Email validation
   - [x] Add timestamps (createdAt, updatedAt with timezone)
-  - [x] Add physician reference (ECE 513)
+  - [x] Role field (user/physician) for 🎓 ECE 513
+  - [x] physicianId reference field for 🎓 ECE 513
   - [x] Create indexes on email (unique)
 
-- [x] **Device Model**
-  - [x] Create Device schema with deviceId, userId, name, status
-  - [x] Add API key field (auto-generated with crypto)
-  - [x] Add configuration fields (frequency, timeRange, timezone)
-  - [x] Add registration timestamp with timezone
-  - [x] Add last seen/heartbeat timestamp with timezone
-  - [x] Create indexes on deviceId and userId
-  - [x] Add device status enum (active, inactive, error)
+- [x] **Device Model** - **Required by spec**
+  - [x] deviceId field (unique, e.g., Particle Photon device ID)
+  - [x] userId reference to associate device with user
+  - [x] name field (user-friendly device name)
+  - [x] API key field (auto-generated with crypto.randomBytes)
+  - [x] status enum (active, inactive, error)
+  - [x] Configuration object with:
+    - [x] measurementFrequency (default: 1800s = 30min) - **Required by spec**
+    - [x] activeStartTime (default: '06:00') - **Required by spec**
+    - [x] activeEndTime (default: '22:00') - **Required by spec**
+    - [x] timezone field
+  - [x] lastSeen timestamp (for heartbeat tracking)
+  - [x] timestamps (createdAt, updatedAt with timezone)
+  - [x] Indexes: deviceId (unique), userId, compound (userId + createdAt)
 
-- [x] **Measurement Model**
-  - [x] Create Measurement schema
-  - [x] Add fields: heartRate, spO2, timestamp with timezone, quality, confidence
-  - [x] Add references to userId and deviceId
-  - [x] Add data validation (range checks: HR 40-200, SpO2 70-100)
-  - [x] Create compound indexes (userId + timestamp, deviceId + timestamp)
-  - [ ] Add TTL index for data retention (optional)
+- [x] **Measurement Model** - **Required by spec**
+  - [x] userId reference - **Required by spec**
+  - [x] deviceId reference - **Required by spec**
+  - [x] heartRate (Number, min: 40, max: 200 bpm) - **Required by spec**
+  - [x] spO2 (Number, min: 70, max: 100%) - **Required by spec**
+  - [x] timestamp with timezone - **Required by spec**
+  - [x] quality enum (good, fair, poor)
+  - [x] confidence (0.0-1.0)
+  - [x] createdAt timestamp
+  - [x] Compound indexes: (userId + timestamp), (deviceId + timestamp)
+  - [ ] TTL index for data retention (optional enhancement)
 
-- [ ] **Physician Model (ECE 513 only)**
+- [ ] **🎓 ECE 513: Physician Model/Features**
   - [x] User model supports physician role via Better Auth
-  - [ ] Add specialty field
-  - [ ] Add license number
-  - [ ] Add patient reference array
-  - [ ] Add separate registration workflow
+  - [x] Users can associate with physician via physicianId field
+  - [ ] Separate physician registration endpoint - **Required for 513**
+  - [ ] Physician-specific fields (specialty, license number, etc.)
+  - [ ] Patient list management for physicians
 
-### Phase 3: Authentication System ✅ (Milestone)
+### Phase 3: Authentication System ✅ (Milestone) - **Required by spec**
 
-- [x] **User Registration** (via Better Auth)
+- [x] **Token-Based Authentication** - **Required by spec says "token-based authentication"**
+  - [x] Implemented via Better Auth with session tokens
+  - [x] Session expiry: 7 days
+  - [x] JWT plugin for 24-hour tokens
+  - [x] httpOnly cookies for security
+  - [x] CORS support for cross-origin requests
+
+- [x] **User Registration** - **Required by spec**
   - [x] POST `/api/auth/sign-up/email` endpoint
-  - [x] Validate email format and uniqueness
-  - [x] Enforce strong password requirements
-  - [x] Hash password with bcrypt (salt rounds: 10)
-  - [x] Create user in database
-  - [x] Return sanitized user data (no password)
-  - [x] Return session token and user data
+  - [x] Email address as username - **Required by spec**
+  - [x] Strong password enforcement - **Required by spec**
+  - [x] Password hashing with bcrypt (10 salt rounds) - **Required by spec**
+  - [x] Email format validation
+  - [x] Email uniqueness check
+  - [x] Create user in database with default role 'user'
+  - [x] Return session token and sanitized user data (no password)
+  - [x] Return appropriate HTTP status codes (201 Created)
 
-- [x] **User Login** (via Better Auth)
+- [x] **User Login** - **Required by spec**
   - [x] POST `/api/auth/sign-in/email` endpoint
   - [x] Validate email and password
   - [x] Compare hashed passwords with bcrypt
   - [x] Generate session token (7 days expiry)
-  - [x] Include userId and role in session
+  - [x] Include userId, email, and role in session/token
   - [x] Return token and user info
-  - [x] Return 401 Unauthorized on failure
+  - [x] Return 401 Unauthorized for invalid credentials - **Required by spec**
 
-- [x] **Session Middleware** (via Better Auth)
-  - [x] Create authentication middleware
-  - [x] Verify session token from cookies
+- [x] **Authentication Middleware** - **Required by spec**
+  - [x] Session token verification from cookies
   - [x] Extract user info from session
-  - [x] Attach user to request object
+  - [x] Attach user to request object (req.user)
   - [x] Handle expired sessions (401)
-  - [x] Handle invalid tokens (403)
+  - [x] Handle invalid/missing tokens (401)
+  - [x] Protect private routes
 
-- [x] **Password Management**
-  - [x] Implement password strength validation (Better Auth)
-  - [ ] Add password reset functionality (optional)
-  - [ ] Add email verification (optional)
+- [x] **API Key Authentication for IoT Devices** - **Required by spec**
+  - [x] Separate authentication for devices
+  - [x] X-API-Key header validation
+  - [x] Cryptographically secure API key generation (crypto.randomBytes)
+  - [x] API key stored in Device model
+  - [x] Middleware: authenticateApiKey()
 
-### Phase 4: Device Management Endpoints ✅ (Milestone)
+- [ ] **Password Management** (Optional enhancements)
+  - [x] Password strength validation via Better Auth
+  - [ ] Password reset functionality (email-based)
+  - [ ] Email verification on registration
 
-- [x] **Device Registration**
+### Phase 4: Account Creation & Device Management ✅ - **Required by spec**
+
+- [x] **Account Creation** - **Required by spec**
+  - [x] User can create account with email and strong password ✅
+  - [x] User can register at least one device with account ✅
+  - [x] Device registration via POST `/api/devices` ✅
+
+- [x] **Account Management** - **Required by spec**
+  - [x] User can update account information (except email) ✅
+  - [x] Implemented via PUT `/api/users/profile` ✅
+  - [x] User can add devices ✅
+  - [x] User can remove devices ✅
+  - [x] User can have more than one device ✅
+
+- [x] **Device Registration Endpoint** - **Required by spec**
   - [x] POST `/api/devices` endpoint
-  - [x] Require authentication (JWT/Session)
+  - [x] Require JWT/Session authentication
   - [x] Validate device ID uniqueness
-  - [x] Generate API key for device (crypto.randomBytes)
-  - [x] Set default configuration (30min frequency, 6am-10pm)
-  - [x] Associate device with user
+  - [x] Generate API key for device (crypto.randomBytes(32))
+  - [x] Set default configuration:
+    - [x] measurementFrequency: 1800s (30 minutes) - **Required by spec**
+    - [x] activeStartTime: '06:00' (6 AM) - **Required by spec**
+    - [x] activeEndTime: '22:00' (10 PM) - **Required by spec**
+  - [x] Associate device with authenticated user
   - [x] Return device info with API key
-  - [x] Return 201 Created
+  - [x] Return 201 Created - **Required by spec**
 
-- [x] **List User Devices**
+- [x] **List User Devices** - **Required by spec**
   - [x] GET `/api/devices` endpoint
   - [x] Require authentication
   - [x] Return all devices for current user
-  - [x] Include device status and last seen
-  - [ ] Support pagination (optional)
-  - [x] Return 200 OK
+  - [x] Include device status and lastSeen
+  - [x] Return 200 OK - **Required by spec**
+  - [ ] Support pagination (optional enhancement)
 
-- [x] **Get Single Device**
+- [x] **Get Single Device** - **Required by spec**
   - [x] GET `/api/devices/:deviceId` endpoint
-  - [x] Verify device belongs to user
+  - [x] Verify device belongs to user (ownership validation)
   - [x] Return device details
-  - [x] Return 404 if not found
-  - [x] Return 403 if not authorized
+  - [x] Return 404 Not Found if device doesn't exist - **Required by spec**
+  - [x] Return 401/403 if not authorized
 
-- [x] **Update Device**
+- [x] **Update Device** - **Required by spec**
   - [x] PUT `/api/devices/:deviceId` endpoint
-  - [x] Allow updating name, status
+  - [x] Allow updating device name and status
+  - [x] Verify ownership
   - [x] Validate updates
   - [x] Return updated device
-  - [x] Return 200 OK
+  - [x] Return 200 OK - **Required by spec**
 
-- [x] **Delete Device**
+- [x] **Delete Device** - **Required by spec**
   - [x] DELETE `/api/devices/:deviceId` endpoint
   - [x] Verify ownership
-  - [x] Optionally delete associated measurements
-  - [x] Return 204 No Content
-  - [x] Handle cascading deletes
+  - [x] Delete associated measurements (cascade)
+  - [x] Return 204 No Content or 200 OK with stats
+  - [x] Handle cascading deletes properly
 
-### Phase 5: Measurement Data Endpoints ✅ (Milestone)
+### Phase 5: Measurement Data Endpoints ✅ (Milestone) - **Required by spec**
 
-- [x] **Submit Measurement (IoT Device)**
+- [x] **Submit Measurement from IoT Device** - **Required by spec**
   - [x] POST `/api/measurements` endpoint
-  - [x] Validate API key in X-API-Key header
+  - [x] Authenticate via X-API-Key header (not JWT) - **Required by spec**
   - [x] Verify device exists and is active
-  - [x] Validate measurement data (HR: 40-200, SpO2: 70-100)
-  - [x] Add timestamp with timezone if not provided
-  - [x] Store measurement in database
-  - [x] Return 201 Created
-  - [x] Return 400 for invalid data
+  - [x] Validate measurement data:
+    - [x] heartRate: 40-200 bpm - **Required by spec**
+    - [x] spO2: 70-100% - **Required by spec**
+  - [x] Accept timestamp or add server timestamp with timezone
+  - [x] Store measurement in MongoDB database
+  - [x] Update device lastSeen timestamp
+  - [x] Return 201 Created - **Required by spec**
+  - [x] Return 400 Bad Request for invalid data - **Required by spec**
+  - [x] Return 401 Unauthorized for invalid API key - **Required by spec**
 
-- [x] **Get User Measurements**
+- [x] **Get User Measurements** - **Required by spec**
   - [x] GET `/api/measurements` endpoint
   - [x] Require JWT/Session authentication
-  - [x] Support query parameters (startDate, endDate, deviceId)
+  - [x] Support query parameters:
+    - [x] startDate, endDate (date range filtering)
+    - [x] deviceId (filter by specific device)
+    - [x] limit (pagination)
   - [x] Return measurements sorted by timestamp DESC
-  - [x] Support pagination (limit parameter)
-  - [x] Return 200 OK
+  - [x] Return only authenticated user's measurements
+  - [x] Return 200 OK - **Required by spec**
 
-- [x] **Get Daily Measurements**
+- [x] **Get Daily Measurements** - **Required by spec (detailed daily view)**
   - [x] GET `/api/measurements/daily/:date` endpoint
   - [x] Filter measurements for specific day
-  - [x] Group by device if multiple devices
-  - [x] Return sorted by timestamp ASC
-  - [x] Return 200 OK
+  - [x] Return heartRate and spO2 readings
+  - [x] Return sorted by timestamp ASC (chronological order)
+  - [x] Support multiple devices (group/identify by device if needed)
+  - [x] Return 200 OK - **Required by spec**
 
-- [x] **Get Weekly Summary**
+- [x] **Get Weekly Summary** - **Required by spec**
   - [x] GET `/api/measurements/weekly/summary` endpoint
   - [x] Calculate last 7 days statistics
-  - [x] Compute average, min, max heart rate and SpO2
-  - [x] Group by day
-  - [x] Return aggregated data
+  - [x] Return average heart rate - **Required by spec**
+  - [x] Return minimum heart rate - **Required by spec**
+  - [x] Return maximum heart rate - **Required by spec**
+  - [x] Also include SpO2 stats (average, min, max)
+  - [x] Include total measurement count
+  - [x] Return 200 OK - **Required by spec**
+
+- [x] **Get Daily Aggregates** (Enhancement for charting)
+  - [x] GET `/api/measurements/daily-aggregates` endpoint
+  - [x] Return daily averages, min, max for last 7 days
+  - [x] Useful for trend visualization
   - [x] Return 200 OK
 
-### Phase 6: Device Configuration Endpoints ✅
+- [x] **Get Device-Specific Measurements** (Enhancement)
+  - [x] GET `/api/measurements/device/:deviceId` endpoint
+  - [x] Filter measurements by specific device
+  - [x] Return 200 OK
 
-- [x] **Get Device Configuration**
+### Phase 6: Device Configuration Endpoints ✅ - **Required by spec**
+
+- [x] **Get Device Configuration** - **Required by spec for IoT device**
   - [x] GET `/api/devices/:deviceId/config` endpoint
-  - [x] Validate API key (for device) or Session (for user)
-  - [x] Return measurement frequency
-  - [x] Return active time range (start/end)
-  - [x] Return timezone
-  - [x] Return 200 OK
+  - [x] Support dual authentication:
+    - [x] API key authentication (for IoT device polling) - **Required by spec**
+    - [x] JWT/Session authentication (for web frontend)
+  - [x] Return measurement frequency (in seconds) - **Required by spec**
+  - [x] Return active time range (start/end times) - **Required by spec**
+  - [x] Return timezone configuration
+  - [x] Return 200 OK - **Required by spec**
 
-- [x] **Update Device Configuration**
+- [x] **Update Device Configuration** - **Required by spec**
   - [x] PUT `/api/devices/:deviceId/config` endpoint
-  - [x] Require Session authentication (user or physician)
-  - [x] Allow updating frequency (validated: 900-14400 seconds)
-  - [x] Allow updating time range
-  - [x] Validate inputs
+  - [x] Require JWT/Session authentication (user or 🎓 physician)
+  - [x] User can define time-of-day range - **Required by spec**
+  - [x] User can define measurement frequency - **Required by spec**
+  - [x] Frequency validation: 900-14400 seconds (15min - 4hr)
+  - [x] Time format validation (HH:MM format)
   - [x] Return updated configuration
-  - [x] Return 200 OK
+  - [x] Return 200 OK - **Required by spec**
 
-- [x] **Configuration Change Notification**
-  - [x] Implement mechanism for device to poll for config changes
-  - [x] Add lastConfigUpdate timestamp (via updatedAt)
-  - [x] Device can check on periodic GET /config calls
+- [x] **Configuration Change Mechanism** - **Required by spec**
+  - [x] IoT device can poll for configuration updates
+  - [x] Device uses updatedAt timestamp to detect changes
+  - [x] Device calls GET /config periodically
+  - [x] No push notification required (polling-based)
 
 ### Phase 7: User Account Management ✅
 
@@ -296,107 +411,150 @@ This project contains the Node.js/Express backend server that provides RESTful A
   - [x] Validate physicianId input
   - [x] Return 200 OK
 
-### Phase 8: Physician Portal (ECE 513 Only)
+### Phase 8: 🎓 ECE 513 Physician Portal - **Required for ECE 513 students**
 
-- [ ] **Physician Registration**
-  - [ ] POST `/api/auth/register/physician` endpoint
-  - [ ] Separate registration page
-  - [ ] Add physician-specific fields
-  - [ ] Assign 'physician' role
+> **Status:** ⚠️ Partially implemented (user model supports physicians, but dedicated endpoints missing)
+
+- [ ] **Physician Registration** - **Required for 513**
+  - [ ] POST `/api/physicians/register` or `/api/auth/register/physician` endpoint
+  - [ ] Separate registration page/endpoint from regular users
+  - [ ] Assign 'physician' role automatically
+  - [ ] Add physician-specific fields (specialty, license number, etc.)
   - [ ] Return 201 Created
+  - [x] Database schema already supports role='physician' via Better Auth
 
-- [ ] **Patient-Physician Association**
-  - [ ] PUT `/api/users/profile/physician` endpoint
-  - [ ] Allow user to select physician from list
-  - [ ] Update user's physician reference
-  - [ ] Return 200 OK
+- [x] **Patient-Physician Association** - **Required for 513**
+  - [x] Implemented via PUT `/api/users/physician` endpoint ✅
+  - [x] Users can select/update their physician
+  - [x] Updates user's physicianId field
+  - [x] Return 200 OK
 
-- [ ] **Get Physician's Patients**
+- [ ] **Physician Portal: All-Patient View** - **Required for 513**
   - [ ] GET `/api/physicians/patients` endpoint
-  - [ ] Require physician authentication
-  - [ ] Return all patients assigned to physician
-  - [ ] Include 7-day summary for each patient
+  - [ ] Require physician role authentication
+  - [ ] List all patients by name with their 7-day stats - **Required for 513**
+  - [ ] Show average, maximum, minimum heart rate for each patient
   - [ ] Return 200 OK
 
-- [ ] **Get Patient Summary**
+- [ ] **Physician Portal: Patient Summary View** - **Required for 513**
   - [ ] GET `/api/physicians/patients/:patientId/summary` endpoint
-  - [ ] Verify patient belongs to physician
-  - [ ] Return weekly summary
-  - [ ] Include configuration controls
+  - [ ] Verify patient belongs to physician (physicianId check)
+  - [ ] Similar to weekly summary view for user
+  - [ ] Include controls for adjusting measurement frequency - **Required for 513**
   - [ ] Return 200 OK
 
-- [ ] **Get Patient Daily View**
+- [ ] **Physician Portal: Patient Detailed Daily View** - **Required for 513**
   - [ ] GET `/api/physicians/patients/:patientId/daily/:date` endpoint
-  - [ ] Return detailed daily measurements
-  - [ ] Same format as user's daily view
+  - [ ] Present same information as detailed day view for user
+  - [ ] Verify physician-patient relationship
   - [ ] Return 200 OK
 
-- [ ] **Update Patient Configuration (Physician)**
+- [ ] **Physician Can Adjust Patient Config** - **Required for 513**
   - [ ] PUT `/api/physicians/patients/:patientId/config` endpoint
   - [ ] Allow physician to adjust measurement frequency
   - [ ] Validate physician-patient relationship
-  - [ ] Update device configuration
+  - [ ] Update patient's device configuration
   - [ ] Return 200 OK
 
-### Phase 9: HTTPS Implementation (ECE 513 Only)
+- [ ] **Role-Based Access Control Middleware**
+  - [ ] Create middleware to verify physician role
+  - [ ] Verify physician-patient relationships
+  - [ ] Return 403 Forbidden for unauthorized access
+
+### Phase 9: 🎓 ECE 513 HTTPS Implementation - **MANDATORY for ECE 513**
+
+> **Status:** ❌ Not implemented yet (HTTP only currently)
+
+- [ ] **The server must use HTTPS** - **MANDATORY for 513** - **Worth 3 points in grading rubric**
 
 - [ ] **SSL Certificate Setup**
-  - [ ] Obtain domain name
-  - [ ] Install Certbot
+  - [ ] Obtain domain name (or use EC2 public DNS)
+  - [ ] Install Certbot on server
   - [ ] Generate Let's Encrypt SSL certificate
-  - [ ] Configure automatic renewal
+  - [ ] Configure automatic renewal (certbot renew)
   - [ ] Test certificate validity
+  - [ ] Store certificate paths in environment variables
 
 - [ ] **HTTPS Server Configuration**
-  - [ ] Configure Express for HTTPS
-  - [ ] Load SSL certificates
-  - [ ] Redirect HTTP to HTTPS
+  - [ ] Modify server.ts to use https module instead of http
+  - [ ] Load SSL certificates (fullchain.pem, privkey.pem)
+  - [ ] Configure Express to listen on port 443
+  - [ ] Implement HTTP to HTTPS redirect (port 80 → 443)
+  - [ ] Update session cookie settings (secure: true)
   - [ ] Test HTTPS endpoints
-  - [ ] Update CORS for HTTPS origins
 
-- [ ] **Deployment Adjustments**
-  - [ ] Update AWS security groups (port 443)
+- [ ] **Environment Configuration for HTTPS**
+  - [ ] Add SSL_CERT_PATH to .env
+  - [ ] Add SSL_KEY_PATH to .env
+  - [ ] Example: /etc/letsencrypt/live/yourdomain.com/
+
+- [ ] **AWS/Deployment Adjustments**
+  - [ ] Open port 443 in security groups
+  - [ ] Keep port 80 open for HTTP → HTTPS redirect
   - [ ] Configure reverse proxy (nginx) if needed
   - [ ] Test end-to-end HTTPS communication
-  - [ ] Update frontend to use HTTPS endpoints
+  - [ ] Update ALLOWED_ORIGINS for HTTPS frontend URL
 
-### Phase 10: AI Health Assistant (Extra Credit +5pts)
+### Phase 10: 💎 AI Health Assistant (Extra Credit +5pts) - **Optional**
 
-- [ ] **Ollama Setup**
-  - [ ] Install Ollama on local machine
-  - [ ] Download lightweight model (phi-3:mini, gemma:2b, or llama3:8b)
-  - [ ] Test local model inference
+> **Status:** ❌ Not implemented yet
+> **Value:** +5 points extra credit (grading rubric item #22)
+
+- [ ] **Requirements from Spec:**
+  - [ ] Local, open-source LLM (NO commercial APIs like OpenAI) - **Required for credit**
+  - [ ] Must use Ollama running on local machine - **Spec recommends Ollama**
+  - [ ] Use ngrok tunnel for AWS-to-local communication - **Required by spec**
+  - [ ] Implement RAG pattern (Retrieval-Augmented Generation) - **Required by spec**
+  - [ ] Responses based ONLY on user's own data - **Required by spec**
+  - [ ] Must demonstrate in final video - **Required by spec**
+  - [ ] Must document in final project documentation - **Required by spec**
+
+- [ ] **Ollama Setup** - **Required for credit**
+  - [ ] Install Ollama on local machine (student's computer)
+  - [ ] Download recommended lightweight model:
+    - [ ] phi-3:mini (recommended) OR
+    - [ ] gemma:2b OR
+    - [ ] llama3:8b
+  - [ ] Test local model inference with Ollama
   - [ ] Set up ngrok tunnel for public access
-  - [ ] Document tunneling setup
+  - [ ] Configure OLLAMA_BASE_URL in environment
 
-- [ ] **RAG Implementation**
+- [ ] **RAG Implementation** - **Required for credit**
   - [ ] Create endpoint POST `/api/ai/chat`
+  - [ ] Require JWT/Session authentication
   - [ ] Receive user question from frontend
-  - [ ] Retrieve relevant health data from MongoDB
-  - [ ] Construct context prompt with user's data
-  - [ ] Send prompt to local Ollama instance
+  - [ ] Step 1: Retrieve relevant health data from MongoDB based on question
+  - [ ] Step 2: Construct context prompt including retrieved data
+  - [ ] Step 3: Send prompt to local Ollama instance via ngrok
   - [ ] Return LLM response to frontend
+  - [ ] Return 200 OK with response
 
-- [ ] **Data Retrieval Logic**
-  - [ ] Implement query analyzer (extract date ranges, metrics)
-  - [ ] Fetch relevant measurements from database
-  - [ ] Format data for LLM context
+- [ ] **Data Retrieval Logic (RAG Step 1)**
+  - [ ] Implement query analyzer (extract date ranges, metrics from question)
+  - [ ] Fetch relevant measurements from MongoDB (user's data only)
+  - [ ] Format data for LLM context (summary format)
   - [ ] Limit context size to prevent token overflow
-  - [ ] Handle edge cases (no data available)
+  - [ ] Handle edge cases (no data available for query)
 
-- [ ] **Prompt Engineering**
+- [ ] **Prompt Engineering (RAG Step 2)**
   - [ ] Design system prompt for health assistant role
-  - [ ] Include user data as context
-  - [ ] Add safety guardrails (medical disclaimers)
+  - [ ] Include retrieved user data as context in prompt
+  - [ ] Add safety guardrails (medical disclaimers, "not medical advice")
   - [ ] Format responses for clarity
   - [ ] Test with various question types
 
-- [ ] **Integration Testing**
+- [ ] **Frontend Integration**
+  - [ ] Add chat interface in web application
+  - [ ] User-friendly UI for asking questions
+  - [ ] Display LLM responses
+
+- [ ] **Testing & Documentation** - **Required for credit**
   - [ ] Test chat functionality end-to-end
-  - [ ] Verify responses based only on user's data
-  - [ ] Test error handling (LLM unavailable)
+  - [ ] Verify responses based only on user's data (not general knowledge)
+  - [ ] Test error handling (LLM unavailable, ngrok down)
   - [ ] Performance testing (response time)
-  - [ ] Document in project documentation
+  - [ ] Demonstrate in final video - **MANDATORY for credit**
+  - [ ] Document architecture in project documentation - **MANDATORY for credit**
 
 ### Phase 11: Testing & Validation
 
@@ -979,6 +1137,38 @@ Chat with AI health assistant (requires JWT).
    ```bash
    curl http://localhost:3000/api/health
    ```
+
+### API Documentation
+
+The API includes comprehensive **auto-generated OpenAPI 3.0 (Swagger) documentation**:
+
+```bash
+# Start the server
+npm run dev
+
+# Access interactive documentation
+# Open browser: http://localhost:4000/api-docs
+```
+
+**Features:**
+- 📖 Interactive Swagger UI with "Try it out" functionality
+- 🔐 Built-in authentication testing (JWT Bearer + API Key)
+- 📝 Complete request/response examples for all endpoints
+- 🔄 Auto-generated from code (always up-to-date)
+- 📦 TypeScript client generation for frontend
+
+**Generate TypeScript Client for Frontend:**
+```bash
+npm run generate-client
+```
+
+This creates type-safe API client in `../web-app/src/api/` for frontend integration.
+
+**Download OpenAPI Spec:**
+- JSON: http://localhost:4000/api-docs/openapi.json
+- Import into Postman, Insomnia, or other API tools
+
+**📚 Full Documentation:** See [docs/API_DOCUMENTATION_SETUP.md](./docs/API_DOCUMENTATION_SETUP.md)
 
 ### Testing
 

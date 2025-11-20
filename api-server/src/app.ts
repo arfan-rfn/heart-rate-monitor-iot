@@ -4,12 +4,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
 import { auth } from './config/auth.js';
 import { toNodeHandler } from 'better-auth/node';
 import { userRoutes } from './routes/users/index.js';
 import { deviceRoutes } from './routes/devices/index.js';
 import { measurementRoutes } from './routes/measurements/index.js';
 import { errorHandler, notFound } from './middleware/error/index.js';
+import { generateOpenAPIDocument } from './docs/openapi-generator.js';
 
 /**
  * Create and configure Express application
@@ -20,7 +22,19 @@ export const createApp = (): Application => {
   // ===== Security Middleware =====
 
   // Helmet: Set security-related HTTP headers
-  app.use(helmet());
+  // Configure CSP to allow Swagger UI to load properly
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
+      },
+    })
+  );
 
   // CORS: Configure allowed origins
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
@@ -73,6 +87,32 @@ export const createApp = (): Application => {
     });
   });
 
+  // ===== OpenAPI/Swagger Documentation =====
+  const openApiDocument = generateOpenAPIDocument();
+
+  // Serve OpenAPI JSON spec
+  app.get('/api-docs/openapi.json', (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(openApiDocument);
+  });
+
+  // Serve Swagger UI
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(openApiDocument, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'PulseConnect API Documentation',
+      customfavIcon: '/favicon.ico',
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        tryItOutEnabled: true,
+      },
+    })
+  );
+
   // ===== Better Auth Routes =====
   // Mount better-auth routes at /api/auth
   // This provides: /api/auth/sign-up/email, /api/auth/sign-in/email, etc.
@@ -88,8 +128,12 @@ export const createApp = (): Application => {
   app.get('/api', (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
-      message: 'Heart Track API',
+      message: 'PulseConnect API',
       version: '1.0.0',
+      documentation: {
+        swagger: `${req.protocol}://${req.get('host')}/api-docs`,
+        openapi: `${req.protocol}://${req.get('host')}/api-docs/openapi.json`,
+      },
       endpoints: {
         auth: {
           signUp: 'POST /api/auth/sign-up/email',

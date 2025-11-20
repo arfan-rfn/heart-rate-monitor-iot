@@ -6,6 +6,42 @@ This project contains the web-based user interface for the Heart Track applicati
 
 > **Note:** This project uses Next.js with the App Router, TypeScript strict mode for type safety, and Tailwind CSS v4 (PostCSS-based) for styling. This modern stack provides better performance, developer experience, and maintainability.
 
+## ⚠️ Project Status Summary (2025-11-19)
+
+### Quick Overview
+- **Foundation:** ✅ 55% Complete (Auth, UI components, API client)
+- **Core Features:** ❌ 0% Complete (Charts, Device Management, Health Views)
+- **Overall:** ~35% Complete
+- **Remaining Work:** 52-75 hours
+
+### What's Working ✅
+- Modern tech stack (Next.js 15, React 19, TypeScript, Tailwind CSS v4)
+- Complete authentication system (email, Google OAuth, Magic Link)
+- 64+ UI components (shadcn/ui + Radix UI)
+- Dashboard structure and navigation
+- Settings pages (profile, account, security, appearance)
+- Admin portal (user management, sessions)
+- API client with error handling
+
+### Critical Missing ❌
+- **Chart.js library not installed** (blocker for all visualizations)
+- Device management UI (0%)
+- Weekly summary view (0%)
+- Daily detailed view (0%)
+- Team info on landing page
+- reference.html page
+- Physician portal (ECE 513 requirement - 0%)
+
+### Next Steps
+1. Install Chart.js: `npm install chart.js react-chartjs-2`
+2. Build device management UI (12 hours)
+3. Implement weekly summary view (12 hours)
+4. Implement daily detailed view (12 hours)
+5. Complete landing pages (4 hours)
+6. (ECE 513) Build physician portal (20 hours)
+
+---
+
 ## ⚠️ Recent Updates (2025-11-19)
 
 ### Better Auth Integration ✅
@@ -146,6 +182,53 @@ This project contains the web-based user interface for the Heart Track applicati
     - References and resources page
     - Help/FAQ section
 
+## 🚨 Critical Missing Requirements
+
+Before project submission, these **MUST** be implemented to meet minimum requirements:
+
+### Priority 1: Core Health Monitoring Features (0% Complete)
+1. **Chart.js Library** - ❌ NOT INSTALLED
+   - Install: `npm install chart.js react-chartjs-2`
+   - Blocker for all data visualization
+
+2. **Device Management UI** - ❌ NOT IMPLEMENTED
+   - Backend API: ✅ Ready
+   - Frontend: Need 6-8 pages/components
+   - Estimated: 12 hours
+
+3. **Weekly Summary View** - ❌ NOT IMPLEMENTED
+   - Backend API: ✅ Ready
+   - Charts + statistics for last 7 days
+   - Estimated: 12 hours
+
+4. **Daily Detailed View** - ❌ NOT IMPLEMENTED
+   - Backend API: ✅ Ready
+   - Time-series charts for selected day
+   - Estimated: 12 hours
+
+5. **Landing Pages** - 🟡 PARTIAL (50%)
+   - **index.html**: Need team info (names, emails, photos)
+   - **reference.html**: ❌ NOT CREATED (list all third-party code)
+   - Estimated: 4 hours
+
+### Priority 2: ECE 513 Requirements (for Graduate Students)
+6. **Physician Portal** - ❌ NOT IMPLEMENTED
+   - Registration, patient list, patient views
+   - Estimated: 20 hours
+
+7. **HTTPS Deployment** - ❌ NOT IMPLEMENTED
+   - SSL certificate setup
+   - Estimated: 4 hours
+
+### Priority 3: Extra Credit (Optional)
+8. **AI Health Assistant** - ❌ NOT IMPLEMENTED
+   - Chat interface + RAG backend
+   - Estimated: 20 hours
+
+**Total Estimated Work Remaining:** 52-75 hours
+
+---
+
 ## TODO List
 
 ### Phase 1: Project Setup & Basic Structure ✅
@@ -222,61 +305,69 @@ This project contains the web-based user interface for the Heart Track applicati
   - [x] Clear errors on input change
   - [x] Handle session expiration (401)
 
-### Phase 3: Dashboard & Navigation
+### Phase 3: Dashboard & Navigation (🟡 60% Complete)
 
-- [ ] **Dashboard HTML**
-  - [ ] Create dashboard.html structure
-  - [ ] Add navigation menu (sidebar or top nav)
-  - [ ] Add welcome section with user name
-  - [ ] Add quick stats cards (today's measurements, device count)
-  - [ ] Add recent measurements preview
-  - [ ] Add quick action buttons
+- [x] **Dashboard HTML**
+  - [x] Create dashboard structure (`app/(app)/dashboard/page.tsx`)
+  - [x] Add navigation menu (sidebar with mobile hamburger)
+  - [x] Add welcome section with user name
+  - [x] Add quick stats cards (device count, measurement count placeholders)
+  - [ ] Add recent measurements preview (need API integration)
+  - [x] Add quick action buttons
 
-- [ ] **Navigation System**
-  - [ ] Design navigation menu
-  - [ ] Add links to Weekly Summary, Daily View, Devices, Settings
-  - [ ] Highlight active page
-  - [ ] Make navigation responsive (hamburger menu for mobile)
-  - [ ] Add logout button in navigation
-  - [ ] Implement smooth page transitions
+- [x] **Navigation System**
+  - [x] Design navigation menu (`components/site-header.tsx`, `components/main-nav.tsx`)
+  - [x] Add links to all major sections
+  - [x] Highlight active page
+  - [x] Make navigation responsive (hamburger menu `components/mobile-nav.tsx`)
+  - [x] Add logout button in navigation (account dropdown)
+  - [x] Implement smooth page transitions
 
-- [ ] **Dashboard Logic**
-  - [ ] Fetch user profile on load
-  - [ ] Display user name in welcome message
-  - [ ] Fetch and display recent measurements (last 5)
-  - [ ] Fetch and display device count
-  - [ ] Calculate today's average heart rate
-  - [ ] Add loading states for data fetching
-  - [ ] Handle empty state (no devices/measurements)
+- [x] **Dashboard Logic**
+  - [x] Fetch user profile on load (`hooks/use-user.ts`)
+  - [x] Display user name in welcome message
+  - [ ] Fetch and display recent measurements (API ready, UI pending)
+  - [x] Fetch and display device count
+  - [ ] Calculate today's average heart rate (need measurement API integration)
+  - [x] Add loading states for data fetching
+  - [x] Handle empty state (no devices/measurements)
 
-- [ ] **Navigation Styling**
-  - [ ] Style navigation menu
-  - [ ] Add hover effects
-  - [ ] Implement active state styling
-  - [ ] Make navigation sticky (optional)
-  - [ ] Add icons to menu items
-  - [ ] Ensure mobile responsiveness
+- [x] **Navigation Styling**
+  - [x] Style navigation menu with Tailwind CSS
+  - [x] Add hover effects
+  - [x] Implement active state styling
+  - [x] Make navigation sticky
+  - [x] Add icons to menu items (Lucide React)
+  - [x] Ensure mobile responsiveness
 
-### Phase 4: Weekly Summary View
+### Phase 4: Weekly Summary View (❌ 0% Complete - CRITICAL)
 
-- [ ] **Weekly Summary HTML**
-  - [ ] Create weekly-summary.html
+**Backend Status:** ✅ API endpoint ready (`GET /api/measurements/weekly/summary`)
+
+**Prerequisites:**
+- [ ] Install Chart.js: `npm install chart.js react-chartjs-2`
+
+- [ ] **Weekly Summary Page**
+  - [ ] Create `app/(app)/measurements/weekly/page.tsx`
   - [ ] Add page header with date range
   - [ ] Create stats cards container (avg, min, max)
-  - [ ] Add canvas element for heart rate chart
-  - [ ] Add canvas element for SpO2 chart
+  - [ ] Add chart container for heart rate trend
+  - [ ] Add chart container for SpO2 trend
   - [ ] Add day-by-day table/list
   - [ ] Add navigation back to dashboard
 
-- [ ] **Weekly Summary Styling**
+- [ ] **Weekly Summary Components**
+  - [ ] Create `components/charts/WeeklyChart.tsx` (dual-axis: HR + SpO2)
+  - [ ] Create `components/charts/WeeklyStatsCard.tsx` (avg/min/max display)
+  - [ ] Create `components/measurements/DayByDayBreakdown.tsx`
   - [ ] Style stats cards with icons
   - [ ] Make cards responsive (stack on mobile)
-  - [ ] Style chart containers
+  - [ ] Style chart containers with proper sizing
   - [ ] Add color coding (green for good, yellow for fair, red for poor)
-  - [ ] Style day-by-day breakdown
   - [ ] Add spacing and visual hierarchy
 
 - [ ] **Weekly Summary Logic**
+  - [ ] Create `hooks/use-weekly-measurements.ts`
   - [ ] Fetch weekly summary from backend
   - [ ] Parse and display statistics (avg, min, max)
   - [ ] Calculate date range (last 7 days)
@@ -285,52 +376,72 @@ This project contains the web-based user interface for the Heart Track applicati
   - [ ] Add loading spinner
   - [ ] Implement error handling
 
-- [ ] **Basic Chart Integration (Preview)**
-  - [ ] Include Chart.js library (CDN or npm)
-  - [ ] Create placeholder charts
-  - [ ] Test Chart.js setup
+- [ ] **Chart.js Integration**
+  - [ ] Install Chart.js library: `npm install chart.js react-chartjs-2`
+  - [ ] Register Chart.js components (CategoryScale, LinearScale, etc.)
+  - [ ] Create chart configuration with heart rate color (red)
+  - [ ] Create chart configuration with SpO2 color (blue)
+  - [ ] Test Chart.js setup with sample data
   - [ ] Prepare data format for charts
-  - [ ] (Full chart implementation in Phase 5)
+  - [ ] Implement responsive chart sizing
 
-### Phase 5: Daily Detailed View with Charts
+### Phase 5: Daily Detailed View with Charts (❌ 0% Complete - CRITICAL)
 
-- [ ] **Daily View HTML**
-  - [ ] Create daily-view.html
-  - [ ] Add date picker for selecting day
-  - [ ] Add previous/next day buttons
-  - [ ] Create canvas for heart rate time-series chart
-  - [ ] Create canvas for SpO2 time-series chart
-  - [ ] Add measurements table/list
-  - [ ] Add export data button (optional)
+**Backend Status:** ✅ API endpoint ready (`GET /api/measurements/daily/:date`)
 
-- [ ] **Daily View Styling**
+**Prerequisites:**
+- [ ] Chart.js must be installed first (see Phase 4)
+
+- [ ] **Daily View Page**
+  - [ ] Create `app/(app)/measurements/daily/page.tsx`
+  - [ ] Add date picker for selecting day (shadcn DatePicker component)
+  - [ ] Add previous/next day navigation buttons
+  - [ ] Create chart container for heart rate time-series
+  - [ ] Create chart container for SpO2 time-series
+  - [ ] Add measurements table/list below charts
+  - [ ] Add export data button (optional - CSV download)
+
+- [ ] **Daily View Components**
+  - [ ] Create `components/charts/HeartRateChart.tsx` (time-series)
+  - [ ] Create `components/charts/SpO2Chart.tsx` (time-series)
+  - [ ] Create `components/charts/DailyStatsCard.tsx` (min/max/avg)
+  - [ ] Create `components/measurements/MeasurementTable.tsx`
+  - [ ] Create `components/measurements/DatePicker.tsx` (with prev/next)
   - [ ] Style date picker and navigation
-  - [ ] Style chart containers with proper sizing
-  - [ ] Create measurement cards or table
-  - [ ] Add time labels and formatting
-  - [ ] Make charts responsive
-  - [ ] Add color coding for measurement quality
+  - [ ] Style chart containers with proper sizing (responsive heights)
+  - [ ] Add time labels and formatting (HH:mm format)
+  - [ ] Make charts responsive (mobile-friendly)
+  - [ ] Add color coding for measurement quality (green/yellow/red)
 
 - [ ] **Daily View Logic**
-  - [ ] Implement date selection
-  - [ ] Fetch daily measurements from backend
-  - [ ] Parse timestamp data
-  - [ ] Sort measurements by time
-  - [ ] Handle empty state (no measurements today)
+  - [ ] Create `hooks/use-daily-measurements.ts`
+  - [ ] Implement date selection (default to today)
+  - [ ] Fetch daily measurements from backend API
+  - [ ] Parse timestamp data (convert to Date objects)
+  - [ ] Sort measurements by time (chronological order)
+  - [ ] Handle empty state (no measurements for selected day)
   - [ ] Implement previous/next day navigation
-  - [ ] Add loading states
+  - [ ] Add loading states (skeleton loaders)
+  - [ ] Implement error handling
 
-- [ ] **Chart.js Implementation**
-  - [ ] Initialize Chart.js for heart rate
-  - [ ] Configure chart options (responsive, tooltips, legend)
-  - [ ] Format time data for x-axis
-  - [ ] Plot heart rate data points
-  - [ ] Add reference line for average
-  - [ ] Initialize Chart.js for SpO2
-  - [ ] Plot SpO2 data points
-  - [ ] Customize chart colors and styling
-  - [ ] Add zoom/pan functionality (optional)
+- [ ] **Chart.js Implementation for Daily Charts**
+  - [ ] Initialize Chart.js for heart rate (Line chart)
+  - [ ] Configure chart options:
+    - [ ] Responsive: true
+    - [ ] MaintainAspectRatio: false
+    - [ ] Tooltips with custom callbacks
+    - [ ] Legend positioning
+  - [ ] Format time data for x-axis (HH:mm)
+  - [ ] Plot heart rate data points (red line)
+  - [ ] Add reference line for daily average (dashed line)
+  - [ ] Initialize Chart.js for SpO2 (Line chart)
+  - [ ] Plot SpO2 data points (blue line)
+  - [ ] Customize chart colors:
+    - [ ] Heart rate: #ef4444 (red)
+    - [ ] SpO2: #3b82f6 (blue)
+  - [ ] Add zoom/pan functionality (optional - chart.js-plugin-zoom)
   - [ ] Make charts update dynamically on date change
+  - [ ] Add min/max indicators on charts
 
 **Example Chart Setup:**
 ```javascript
@@ -384,188 +495,239 @@ const heartRateChart = new Chart(ctx, {
 });
 ```
 
-### Phase 6: Device Management Interface
+### Phase 6: Device Management Interface (❌ 0% Complete - CRITICAL)
 
-- [ ] **Device Management HTML**
-  - [ ] Create devices.html
-  - [ ] Add "Add New Device" button
-  - [ ] Create device cards/list display
-  - [ ] Add modal for adding new device
-  - [ ] Add modal for editing device configuration
-  - [ ] Add delete confirmation modal
+**Backend Status:** ✅ All API endpoints ready
+- `POST /api/devices` - Register device
+- `GET /api/devices` - List devices
+- `GET /api/devices/:id` - Get device details
+- `PUT /api/devices/:id` - Update device
+- `DELETE /api/devices/:id` - Delete device
+- `GET /api/devices/:id/config` - Get configuration
+- `PUT /api/devices/:id/config` - Update configuration
 
-- [ ] **Device Management Styling**
+- [ ] **Device Management Pages**
+  - [ ] Create `app/(app)/devices/page.tsx` - Device list view
+  - [ ] Create `app/(app)/devices/new/page.tsx` - Register new device
+  - [ ] Create `app/(app)/devices/[id]/page.tsx` - Device details
+  - [ ] Add "Add New Device" button on list page
+  - [ ] Add navigation back to dashboard
+
+- [ ] **Device Management Components**
+  - [ ] Create `components/devices/DeviceList.tsx`
+  - [ ] Create `components/devices/DeviceCard.tsx`
+  - [ ] Create `components/devices/AddDeviceDialog.tsx`
+  - [ ] Create `components/devices/EditDeviceDialog.tsx`
+  - [ ] Create `components/devices/DeleteDeviceDialog.tsx`
+  - [ ] Create `components/devices/DeviceAPIKeyDisplay.tsx` (one-time display)
   - [ ] Style device cards with icons
   - [ ] Show device status (active, inactive, error)
   - [ ] Add color coding for status
-  - [ ] Style modals with overlay
   - [ ] Make modals accessible (keyboard navigation)
   - [ ] Ensure responsive layout
 
 - [ ] **Device List Logic**
+  - [ ] Create `hooks/use-devices.ts`
   - [ ] Fetch all devices from backend
   - [ ] Display device name, ID, status
   - [ ] Show last seen timestamp
   - [ ] Display masked API key (show/hide button)
   - [ ] Handle empty state (no devices)
-  - [ ] Add loading state
+  - [ ] Add loading states
+  - [ ] Implement error handling
 
 - [ ] **Add Device Functionality**
   - [ ] Create add device form (deviceId, name)
   - [ ] Validate device ID format
   - [ ] Submit device registration to backend
-  - [ ] Display API key to user (one-time)
+  - [ ] Display API key to user (ONE-TIME ONLY - security requirement)
   - [ ] Add copy-to-clipboard for API key
   - [ ] Update device list after adding
-  - [ ] Show success message
+  - [ ] Show success message with toast
 
 - [ ] **Edit Device Configuration**
   - [ ] Open edit modal with current config
-  - [ ] Allow editing measurement frequency (dropdown)
-  - [ ] Allow editing active time range (time pickers)
-  - [ ] Validate inputs (frequency 15 min - 4 hours)
+  - [ ] Allow editing measurement frequency (dropdown: 15min, 30min, 1hr, 2hr, 4hr)
+  - [ ] Allow editing active time range (time pickers: default 6:00 AM - 10:00 PM)
+  - [ ] Validate inputs (frequency 15 min - 4 hours per spec)
   - [ ] Submit configuration update to backend
-  - [ ] Update device list
+  - [ ] Update device list with new config
   - [ ] Show success message
 
 - [ ] **Delete Device Functionality**
   - [ ] Show confirmation modal
-  - [ ] Explain consequences (data deletion)
+  - [ ] Explain consequences (all measurement data will be deleted)
+  - [ ] Require password confirmation for security
   - [ ] Submit delete request to backend
   - [ ] Remove device from list
   - [ ] Show success message
+  - [ ] Redirect if on device detail page
 
-### Phase 7: Account Settings Page
+### Phase 7: Account Settings Page (✅ 100% Complete)
 
-- [ ] **Account Settings HTML**
-  - [ ] Create settings.html
-  - [ ] Add profile section (name, email)
-  - [ ] Add change password form
-  - [ ] Add delete account section
-  - [ ] Add physician selection (ECE 513)
+- [x] **Account Settings Pages**
+  - [x] Create `app/(app)/settings/page.tsx` - Settings overview
+  - [x] Create `app/(app)/settings/profile/page.tsx` - Profile settings
+  - [x] Create `app/(app)/settings/account/page.tsx` - Account settings
+  - [x] Create `app/(app)/settings/security/page.tsx` - Security settings
+  - [x] Create `app/(app)/settings/appearance/page.tsx` - Appearance settings
+  - [ ] Add physician selection (ECE 513 requirement - pending)
 
-- [ ] **Account Settings Styling**
-  - [ ] Style profile card
-  - [ ] Style form sections
-  - [ ] Add visual separation between sections
-  - [ ] Make responsive for mobile
-  - [ ] Add icons for visual clarity
+- [x] **Account Settings Styling**
+  - [x] Style profile card with shadcn/ui components
+  - [x] Style form sections with proper spacing
+  - [x] Add visual separation between sections
+  - [x] Make responsive for mobile
+  - [x] Add icons for visual clarity (Lucide React)
+  - [x] Implement dark mode support
 
-- [ ] **Profile Management Logic**
-  - [ ] Fetch user profile
-  - [ ] Display current name and email
-  - [ ] Allow editing name
-  - [ ] Disable email editing (or require verification)
-  - [ ] Submit profile updates to backend
-  - [ ] Show success message
+- [x] **Profile Management Logic**
+  - [x] Fetch user profile (`hooks/use-user.ts`)
+  - [x] Display current name and email
+  - [x] Allow editing name and profile picture
+  - [x] Email editing disabled (Better Auth handles this)
+  - [x] Submit profile updates to backend
+  - [x] Show success message with toast notifications
 
-- [ ] **Change Password Functionality**
-  - [ ] Create change password form (current, new, confirm)
-  - [ ] Validate current password
-  - [ ] Validate new password strength
-  - [ ] Validate password match
-  - [ ] Submit to backend
-  - [ ] Show success message
-  - [ ] Clear form after success
+- [x] **Change Password Functionality**
+  - [x] Create change password form (current, new, confirm)
+  - [x] Validate current password
+  - [x] Validate new password strength (with visual indicator)
+  - [x] Validate password match
+  - [x] Submit to backend via Better Auth
+  - [x] Show success message
+  - [x] Clear form after success
 
-- [ ] **Delete Account Functionality**
-  - [ ] Show warning modal
-  - [ ] Require password confirmation
-  - [ ] Explain data deletion
-  - [ ] Submit delete request to backend
-  - [ ] Clear localStorage
-  - [ ] Redirect to landing page
-  - [ ] Show confirmation message
+- [x] **Delete Account Functionality**
+  - [x] Show warning modal (AlertDialog)
+  - [x] Require password confirmation
+  - [x] Explain data deletion consequences
+  - [x] Submit delete request to backend
+  - [x] Clear session cookies
+  - [x] Redirect to account-deleted confirmation page
+  - [x] Show confirmation message
 
-### Phase 8: Responsive Design
+### Phase 8: Responsive Design (🟡 60% Complete)
 
-- [ ] **Mobile Optimization (320px - 767px)**
-  - [ ] Stack layout vertically
-  - [ ] Make navigation hamburger menu
-  - [ ] Adjust font sizes for readability
-  - [ ] Make buttons larger (touch-friendly)
-  - [ ] Simplify charts (reduce data points if needed)
-  - [ ] Test on real mobile devices
-  - [ ] Ensure forms are easy to fill on mobile
-  - [ ] Add swipe gestures (optional)
+- [x] **Mobile Optimization (320px - 767px)**
+  - [x] Stack layout vertically (Tailwind CSS grid system)
+  - [x] Make navigation hamburger menu (`components/mobile-nav.tsx`)
+  - [x] Adjust font sizes for readability (Tailwind responsive classes)
+  - [x] Make buttons larger (touch-friendly, min-h-11)
+  - [ ] Simplify charts (charts not created yet)
+  - [ ] Test on real mobile devices (basic testing done)
+  - [x] Ensure forms are easy to fill on mobile (React Hook Form)
+  - [ ] Add swipe gestures (optional enhancement)
 
-- [ ] **Tablet Optimization (768px - 1023px)**
-  - [ ] Use 2-column layouts where appropriate
-  - [ ] Adjust chart sizes
-  - [ ] Make navigation visible but compact
-  - [ ] Test landscape and portrait orientations
-  - [ ] Ensure touch targets are adequate
+- [x] **Tablet Optimization (768px - 1023px)**
+  - [x] Use 2-column layouts where appropriate (Tailwind md: breakpoint)
+  - [ ] Adjust chart sizes (charts not created yet)
+  - [x] Make navigation visible but compact
+  - [ ] Test landscape and portrait orientations (needs testing)
+  - [x] Ensure touch targets are adequate (44px minimum)
 
-- [ ] **Desktop Optimization (1024px+)**
-  - [ ] Use multi-column layouts
-  - [ ] Show full navigation sidebar
-  - [ ] Expand charts to full width
-  - [ ] Add hover states for interactive elements
-  - [ ] Optimize for mouse and keyboard navigation
+- [x] **Desktop Optimization (1024px+)**
+  - [x] Use multi-column layouts (Tailwind lg: breakpoint)
+  - [x] Show full navigation sidebar
+  - [ ] Expand charts to full width (charts not created yet)
+  - [x] Add hover states for interactive elements
+  - [x] Optimize for mouse and keyboard navigation (keyboard shortcuts implemented)
 
-- [ ] **Cross-Browser Testing**
-  - [ ] Test on Chrome (latest)
-  - [ ] Test on Firefox (latest)
-  - [ ] Test on Safari (latest)
-  - [ ] Test on Edge (latest)
-  - [ ] Fix browser-specific issues
-  - [ ] Add vendor prefixes for CSS if needed
+- [x] **Cross-Browser Testing (Basic)**
+  - [x] Test on Chrome (latest) - Primary development browser
+  - [x] Test on Firefox (latest) - Basic testing
+  - [x] Test on Safari (latest) - Basic testing
+  - [ ] Test on Edge (latest) - Needs testing
+  - [ ] Fix browser-specific issues (comprehensive testing needed)
+  - [x] CSS autoprefixer included in build (PostCSS)
 
-- [ ] **Performance Optimization**
-  - [ ] Minimize HTTP requests
-  - [ ] Compress images
-  - [ ] Use CSS sprites or SVG icons
-  - [ ] Lazy load charts (initialize on view)
-  - [ ] Cache API responses where appropriate
-  - [ ] Minify CSS and JavaScript (production)
+- [x] **Performance Optimization (Basic)**
+  - [x] Next.js automatic code splitting
+  - [x] Image optimization with Next.js Image component
+  - [x] Use SVG icons (Lucide React)
+  - [ ] Lazy load charts (charts not created yet)
+  - [x] Cache API responses (TanStack Query with staleTime)
+  - [x] Minify CSS and JavaScript (Next.js production build)
 
-### Phase 9: Physician Portal UI (ECE 513 Only)
+### Phase 9: Physician Portal UI (ECE 513 Only) (❌ 0% Complete - REQUIRED FOR 513)
+
+**Backend Status:** 🟡 Partial - User model supports `role` and `physicianId`, need physician-specific endpoints
+
+**Required Backend Additions:**
+- [ ] `POST /api/auth/register/physician` - Physician registration endpoint
+- [ ] `GET /api/physician/patients` - List all assigned patients
+- [ ] `GET /api/physician/patients/:id` - Get patient details
+- [ ] `GET /api/physician/patients/:id/weekly` - Patient weekly summary
+- [ ] `GET /api/physician/patients/:id/daily/:date` - Patient daily measurements
+- [ ] `PUT /api/physician/patients/:id/device-config` - Update patient device configuration
+
+**Frontend Implementation:**
 
 - [ ] **Physician Registration Page**
-  - [ ] Create physician-register.html
-  - [ ] Add physician-specific fields (specialty, license)
-  - [ ] Style registration form
+  - [ ] Create `app/(app)/physician/register/page.tsx`
+  - [ ] Add physician-specific fields (specialty, medical license number, NPI)
+  - [ ] Style registration form with shadcn/ui
   - [ ] Integrate with backend physician registration endpoint
-  - [ ] Redirect to physician dashboard
+  - [ ] Redirect to physician dashboard after registration
+  - [ ] Add verification workflow (if required)
 
 - [ ] **Physician Dashboard**
-  - [ ] Create physician-dashboard.html
-  - [ ] Display list of all patients
-  - [ ] Show patient name and email
-  - [ ] Display 7-day summary for each patient
+  - [ ] Create `app/(app)/physician/dashboard/page.tsx`
+  - [ ] Create `app/(app)/physician/patients/page.tsx`
+  - [ ] Create `components/physician/PatientList.tsx`
+  - [ ] Create `components/physician/PatientCard.tsx`
+  - [ ] Display list of all assigned patients
+  - [ ] Show patient name, email, and photo
+  - [ ] Display 7-day summary for each patient (avg, min, max HR + SpO2)
   - [ ] Add "View Details" button for each patient
-  - [ ] Style patient cards/table
-  - [ ] Implement search/filter (optional)
+  - [ ] Style patient cards with health status indicators
+  - [ ] Implement search/filter by patient name
+  - [ ] Add pagination for large patient lists
 
 - [ ] **Patient Summary View (Physician)**
-  - [ ] Create physician-patient-summary.html
+  - [ ] Create `app/(app)/physician/patients/[id]/page.tsx`
+  - [ ] Create `app/(app)/physician/patients/[id]/weekly/page.tsx`
   - [ ] Display patient weekly summary
-  - [ ] Show weekly statistics
-  - [ ] Add charts (same as user weekly view)
+  - [ ] Show weekly statistics (avg, min, max)
+  - [ ] Reuse WeeklyChart component from Phase 4
   - [ ] Add link to daily detailed view
-  - [ ] Add configuration controls
+  - [ ] Add device configuration controls (see below)
+  - [ ] Show patient demographic info
 
 - [ ] **Patient Daily View (Physician)**
-  - [ ] Create physician-patient-daily.html
-  - [ ] Reuse daily view components
-  - [ ] Fetch patient daily data
-  - [ ] Display same charts and measurements
+  - [ ] Create `app/(app)/physician/patients/[id]/daily/page.tsx`
+  - [ ] Reuse HeartRateChart and SpO2Chart components
+  - [ ] Fetch patient daily data via physician API
+  - [ ] Display same charts and measurements as user view
+  - [ ] Add date navigation (previous/next day)
   - [ ] Ensure physician can view but patient owns data
+  - [ ] Add notes/annotations feature (optional)
 
 - [ ] **Device Configuration (Physician)**
+  - [ ] Create `components/physician/ConfigControls.tsx`
   - [ ] Add edit configuration button in patient summary
-  - [ ] Allow physician to adjust measurement frequency
-  - [ ] Allow physician to adjust active time range
+  - [ ] Allow physician to adjust measurement frequency (dropdown)
+  - [ ] Allow physician to adjust active time range (time pickers)
   - [ ] Submit configuration changes to backend
   - [ ] Show confirmation message
-  - [ ] Update patient's device configuration
+  - [ ] Log configuration changes (audit trail)
+  - [ ] Update patient's device configuration in real-time
 
-- [ ] **Physician Authentication**
-  - [ ] Separate login page for physicians (optional)
-  - [ ] Or role-based redirect after login
-  - [ ] Verify physician role from JWT
-  - [ ] Restrict access to physician pages
-  - [ ] Add logout functionality
+- [ ] **Physician Authentication & Authorization**
+  - [ ] Use existing Better Auth with role-based access
+  - [ ] Create `components/physician/PhysicianGuard.tsx` (role check)
+  - [ ] Verify physician role from session
+  - [ ] Restrict access to physician pages (middleware or guard)
+  - [ ] Add physician role badge in navigation
+  - [ ] Implement role-based redirect after login
+
+- [ ] **Patient-Physician Association**
+  - [ ] Add physician selector in user settings page (`app/(app)/settings/profile/page.tsx`)
+  - [ ] Allow users to select their physician from dropdown
+  - [ ] Update user profile with `physicianId`
+  - [ ] Display current physician in user profile
+  - [ ] Allow users to change physician
+  - [ ] Notify physician when new patient assigned (optional)
 
 ### Phase 10: AI Chat Interface (Extra Credit)
 
@@ -629,114 +791,386 @@ async function sendChatMessage(question) {
 }
 ```
 
-### Phase 11: Index.html and References.html
+### Phase 11: Index.html and References.html (🟡 50% Complete - PROJECT REQUIREMENT)
 
-- [ ] **Landing Page (index.html)**
-  - [ ] Create attractive landing page
-  - [ ] Add hero section with tagline
-  - [ ] Explain Heart Track features
-  - [ ] Add "Get Started" button (links to signup)
-  - [ ] Add "Login" button
-  - [ ] Include screenshots/mockups
-  - [ ] Add footer with links
+**Project Spec Requirements:**
+- ✅ "The web application should have an index.html page to introduce your team and project"
+- ❌ "The web application should have the reference.html page to list your third-party APIs, libraries, and code"
 
-- [ ] **References Page**
-  - [ ] Create references.html
-  - [ ] List all libraries and frameworks used
-  - [ ] Link to Chart.js documentation
-  - [ ] Link to backend API (if public)
-  - [ ] Credit icon sources (Font Awesome, etc.)
+- [x] **Landing Page (index.html / root page)**
+  - [x] Create `app/(app)/page.tsx` landing page
+  - [x] Add hero section with tagline
+  - [ ] **REQUIRED:** Add team member information
+    - [ ] Team member names
+    - [ ] Team member emails
+    - [ ] Team member photos
+    - [ ] Roles/contributions
+  - [ ] **REQUIRED:** Project description
+    - [ ] Explain Heart Track (PulseConnect) purpose
+    - [ ] Describe key features
+    - [ ] Add screenshots/mockups of app
+    - [ ] Include demo video (optional)
+  - [x] Add "Get Started" button (links to signup)
+  - [x] Add "Login" button
+  - [x] Add footer with links
+  - [x] Make responsive design
+
+- [ ] **References Page (REQUIRED)**
+  - [ ] Create `app/(app)/references/page.tsx` or `reference.html`
+  - [ ] **List all third-party APIs:**
+    - [ ] Better Auth API
+    - [ ] Backend REST API (api-server)
+    - [ ] Any other external APIs used
+  - [ ] **List all libraries and frameworks:**
+    - [ ] Next.js 15.2.4
+    - [ ] React 19
+    - [ ] TypeScript
+    - [ ] Tailwind CSS v4
+    - [ ] Chart.js (when installed)
+    - [ ] shadcn/ui + Radix UI
+    - [ ] TanStack Query
+    - [ ] All other npm packages (see package.json)
+  - [ ] **List all code sources:**
+    - [ ] Course examples used
+    - [ ] Stack Overflow snippets
+    - [ ] Tutorial code
+    - [ ] GitHub repositories referenced
+  - [ ] Link to documentation sources:
+    - [ ] Chart.js documentation
+    - [ ] Next.js documentation
+    - [ ] Better Auth documentation
+  - [ ] Credit icon sources (Lucide React icons)
   - [ ] Add bibliography if applicable
-  - [ ] Link to project repository
+  - [ ] Link to project repository (GitHub/GitLab)
 
 - [ ] **Help/FAQ Page (Optional)**
-  - [ ] Create faq.html
+  - [ ] Create `app/(app)/help/page.tsx`
   - [ ] Answer common questions
   - [ ] Provide troubleshooting tips
   - [ ] Explain how to use each feature
   - [ ] Add contact information
+  - [ ] Link to documentation
 
-### Phase 12: Testing & Browser Compatibility
+### Phase 12: Testing & Browser Compatibility (🟡 20% Complete)
 
-- [ ] **Functional Testing**
-  - [ ] Test login/signup flow
-  - [ ] Test JWT token storage and retrieval
-  - [ ] Test navigation between pages
-  - [ ] Test dashboard data loading
-  - [ ] Test weekly summary display
-  - [ ] Test daily view with date selection
-  - [ ] Test chart rendering
-  - [ ] Test device management (add, edit, delete)
-  - [ ] Test account settings updates
-  - [ ] Test logout functionality
+**Current Status:**
+- ✅ Basic authentication flow tested
+- ✅ Chrome desktop testing done
+- ❌ Comprehensive test suite not created
+- ❌ E2E testing not implemented
+
+- [x] **Functional Testing (Basic)**
+  - [x] Test login/signup flow (working)
+  - [x] Test session management (working)
+  - [ ] Test navigation between pages (need to test all routes)
+  - [ ] Test dashboard data loading (need real data)
+  - [ ] Test weekly summary display (not implemented yet)
+  - [ ] Test daily view with date selection (not implemented yet)
+  - [ ] Test chart rendering (not implemented yet)
+  - [ ] Test device management (add, edit, delete) (not implemented yet)
+  - [x] Test account settings updates (working)
+  - [x] Test logout functionality (working)
 
 - [ ] **API Integration Testing**
-  - [ ] Verify all API endpoints work
+  - [x] Verify auth endpoints work
+  - [ ] Test device endpoints from frontend
+  - [ ] Test measurement endpoints from frontend
   - [ ] Test error responses (401, 404, 500)
-  - [ ] Test loading states
+  - [x] Test loading states (implemented with TanStack Query)
   - [ ] Test empty states (no data)
-  - [ ] Test token expiration handling
+  - [x] Test session expiration handling (implemented)
   - [ ] Test network failure scenarios
 
-- [ ] **UI/UX Testing**
-  - [ ] Test on different screen sizes
-  - [ ] Test on touch devices
-  - [ ] Verify all buttons and links work
-  - [ ] Check form validation
-  - [ ] Test keyboard navigation
-  - [ ] Verify accessibility (screen readers)
-  - [ ] Check color contrast ratios
+- [x] **UI/UX Testing (Basic)**
+  - [x] Test on different screen sizes (basic)
+  - [ ] Test on real touch devices
+  - [x] Verify buttons and links work (basic)
+  - [x] Check form validation (React Hook Form + Zod)
+  - [x] Test keyboard navigation (basic)
+  - [ ] Verify accessibility (screen readers) - needs comprehensive testing
+  - [ ] Check color contrast ratios (WCAG compliance)
 
-- [ ] **Chart Testing**
+- [ ] **Chart Testing (Not Started)**
   - [ ] Test charts with varying data amounts
   - [ ] Test empty chart state (no data)
   - [ ] Verify chart responsiveness
   - [ ] Test chart tooltips and interactions
   - [ ] Verify correct data representation
+  - [ ] Test chart performance with large datasets
 
-- [ ] **Cross-Browser Testing**
-  - [ ] Chrome (desktop and mobile)
-  - [ ] Firefox (desktop and mobile)
-  - [ ] Safari (desktop and mobile)
-  - [ ] Edge (desktop)
+- [x] **Cross-Browser Testing (Basic)**
+  - [x] Chrome (desktop) - Primary development browser
+  - [ ] Chrome (mobile) - Needs testing
+  - [x] Firefox (desktop) - Basic testing done
+  - [ ] Firefox (mobile) - Needs testing
+  - [x] Safari (desktop) - Basic testing done
+  - [ ] Safari (mobile/iOS) - Needs testing
+  - [ ] Edge (desktop) - Needs testing
   - [ ] Fix any browser-specific bugs
 
 - [ ] **Performance Testing**
-  - [ ] Measure page load times
-  - [ ] Test with large datasets
+  - [ ] Measure page load times (Lighthouse)
+  - [ ] Test with large datasets (100+ measurements)
   - [ ] Check JavaScript execution time
   - [ ] Optimize slow operations
-  - [ ] Test on slower network connections
+  - [ ] Test on slower network connections (3G simulation)
+  - [x] Verify Next.js code splitting works
+  - [x] Check bundle size (build analysis)
 
-### Phase 13: Documentation
+- [ ] **End-to-End Testing (Recommended but Optional)**
+  - [ ] Set up Playwright or Cypress
+  - [ ] Write E2E tests for user flows
+  - [ ] Test device registration flow
+  - [ ] Test measurement viewing flow
+  - [ ] Test physician portal flow (ECE 513)
+  - [ ] Automate testing in CI/CD
 
-- [ ] **Code Documentation**
-  - [ ] Add JSDoc comments to functions
-  - [ ] Document API service module
-  - [ ] Explain authentication flow
-  - [ ] Document chart initialization
-  - [ ] Add inline comments for complex logic
+### Phase 13: Documentation (🟡 70% Complete)
 
-- [ ] **User Guide**
-  - [ ] Write step-by-step user manual
-  - [ ] Explain how to register and login
-  - [ ] Explain how to add a device
-  - [ ] Explain how to view measurements
-  - [ ] Explain how to interpret charts
-  - [ ] Add screenshots for clarity
+**Current Status:**
+- ✅ Excellent code documentation in `/docs` folder
+- ✅ README with setup instructions
+- ✅ CLAUDE.md development guide
+- ❌ User guide missing
+- ❌ Deployment documentation incomplete
 
-- [ ] **Developer Documentation**
-  - [ ] Document file structure
-  - [ ] Explain project architecture
-  - [ ] Document API integration
-  - [ ] Provide setup instructions
-  - [ ] Document build process (if any)
+- [x] **Code Documentation**
+  - [x] Comprehensive documentation in `/docs` folder:
+    - [x] `admin-integration.md` - Admin portal documentation
+    - [x] `authentication-security-audit.md` - Auth security details
+    - [x] `SECURITY.md` - Security best practices
+    - [x] `COMPLETE_IMPLEMENTATION_SUMMARY.md` - Implementation details
+    - [x] `USER_MANAGEMENT_FRONTEND.md` - User management guide
+  - [x] Document API service module (`lib/api/client.ts` well documented)
+  - [x] Explain authentication flow (Better Auth integration documented)
+  - [ ] Document chart initialization (not implemented yet)
+  - [x] Add inline comments for complex logic (done with JSDoc)
+  - [x] CLAUDE.md development guide for AI assistance
 
-- [ ] **Deployment Documentation**
-  - [ ] Document hosting options (GitHub Pages, Netlify, etc.)
-  - [ ] Explain environment configuration
-  - [ ] Document CORS setup
+- [ ] **User Guide (Missing - REQUIRED FOR SUBMISSION)**
+  - [ ] Create `docs/USER_GUIDE.md`
+  - [ ] Write step-by-step user manual:
+    - [ ] How to register and login
+    - [ ] How to add a device
+    - [ ] How to view measurements (weekly and daily)
+    - [ ] How to configure device settings
+    - [ ] How to interpret charts
+    - [ ] How to manage account settings
+    - [ ] How to delete account
+  - [ ] Add screenshots for each feature
+  - [ ] Include troubleshooting section
+  - [ ] **ECE 513:** Document physician portal usage
+
+- [x] **Developer Documentation (Mostly Complete)**
+  - [x] Document file structure (in README)
+  - [x] Explain project architecture (in README and CLAUDE.md)
+  - [x] Document API integration (in README and examples)
+  - [x] Provide setup instructions (in README)
+  - [x] Document build process (in README)
+  - [x] Environment variable documentation (in README and CLAUDE.md)
+  - [x] Component usage examples (in README)
+  - [ ] Add API endpoint documentation table
+
+- [ ] **Deployment Documentation (Partial)**
+  - [x] Document hosting options (Vercel, Netlify, Docker)
+  - [x] Explain environment configuration
+  - [ ] Document CORS setup (needs details)
   - [ ] Provide deployment checklist
+  - [ ] **ECE 513:** Document HTTPS/SSL setup
+  - [ ] Document production build steps
+  - [ ] Add monitoring and logging setup
+  - [ ] Document backup and recovery
+
+- [ ] **Project Documentation (REQUIRED FOR SUBMISSION)**
+  - [ ] **Project Description Section** (2 points)
+    - [ ] Backend implementation narrative
+    - [ ] Frontend implementation narrative
+    - [ ] Embedded device implementation narrative
+    - [ ] **ECE 513:** LLM Health AI Assistant section (if implemented)
+  - [ ] **File Description Section** (1 point)
+    - [ ] List all public files with descriptions
+    - [ ] List all route files with descriptions
+    - [ ] List all model files with descriptions
+    - [ ] List all JavaScript/TypeScript files with descriptions
+    - [ ] Use full sentences/short paragraphs
+  - [ ] **Results Section** (0.5 points)
+    - [ ] Screenshots of website functionalities
+    - [ ] Screenshots of each HTML component
+    - [ ] Device screenshots (add/remove)
+    - [ ] Visualization screenshots (charts)
+    - [ ] **ECE 513:** Physician portal screenshots
+    - [ ] Diagrams showing results
+    - [ ] Tables with measurement data
+  - [ ] **Lessons Learned Section** (0.5 points)
+    - [ ] At least 5 bullet points in full sentences
+    - [ ] What was learned from implementation
+  - [ ] **Challenges Section** (0.5 points)
+    - [ ] At least 5 bullet points in full sentences
+    - [ ] Challenges faced during implementation
+    - [ ] How challenges were resolved
+  - [ ] **Team Contribution Table** (0.25 points)
+    - [ ] Table with team members (rows)
+    - [ ] Components: frontend, backend, embedded, docs (columns)
+    - [ ] Percentage contribution out of 100 for each
+  - [ ] **Reference Section** (0.25 points)
+    - [ ] Properly cite all resources used
+    - [ ] List all third-party libraries
+    - [ ] List all tutorials followed
+    - [ ] List all code sources
+
+### Phase 14: Video Submission Requirements (❌ Not Started - REQUIRED)
+
+**Project Spec Requirements:**
+- **Pitch Video:** 5 minutes (for potential investors)
+- **Demo Video:** 15-20 minutes (20 minutes maximum)
+
+- [ ] **Pitch Video (5 minutes) - 3 points**
+  - [ ] Plan video structure (storyboard)
+  - [ ] Target audience: Angel investors, VCs, Kickstarter
+  - [ ] **Content Requirements:**
+    - [ ] Introduce the problem (heart rate monitoring needs)
+    - [ ] Present the solution (PulseConnect system)
+    - [ ] Explain key features (IoT device + web app + physician portal)
+    - [ ] Show market opportunity
+    - [ ] Demonstrate prototype (quick demo)
+    - [ ] Explain business model (if applicable)
+    - [ ] Call to action
+  - [ ] Record video (use screen recording + webcam)
+  - [ ] Edit video (add transitions, titles, music)
+  - [ ] Upload to YouTube or host on server
+  - [ ] Add video link to README
+  - [ ] **Examples:** https://kickstarterguide.com/2012/06/13/examples-of-great-pitch-videos/
+
+- [ ] **Demo Video (15-20 minutes max) - 1 point**
+  - [ ] Plan video structure:
+    - [ ] Part 1: User Experience (7-10 minutes)
+    - [ ] Part 2: Code Implementation (7-10 minutes)
+  - [ ] **Part 1: User Experience Demo**
+    - [ ] Show landing page (index.html with team info)
+    - [ ] Demonstrate user registration and login
+    - [ ] Show device registration process
+    - [ ] Display API key (one-time display)
+    - [ ] Show dashboard with quick stats
+    - [ ] Demonstrate weekly summary view (charts)
+    - [ ] Demonstrate daily detailed view (charts)
+    - [ ] Show device configuration (time range, frequency)
+    - [ ] Demonstrate account settings
+    - [ ] Show references page
+    - [ ] **ECE 513:** Show physician portal features
+    - [ ] **Extra Credit:** Show AI chat interface
+  - [ ] **Part 2: Code Implementation Discussion**
+    - [ ] Show project file structure
+    - [ ] Explain Next.js App Router architecture
+    - [ ] Show authentication implementation (Better Auth)
+    - [ ] Show API client implementation (`lib/api/client.ts`)
+    - [ ] Show device management code (components)
+    - [ ] Show chart implementation (Chart.js setup)
+    - [ ] Explain state management (TanStack Query)
+    - [ ] Show responsive design techniques (Tailwind CSS)
+    - [ ] Discuss security measures
+    - [ ] **ECE 513:** Show physician portal code
+  - [ ] **Address Each Requirement:**
+    - [ ] Mention how each project requirement was met
+    - [ ] Show responsive design on different screen sizes
+    - [ ] Demonstrate error handling
+    - [ ] Show loading states
+    - [ ] Explain API integration
+  - [ ] Record screen with narration
+  - [ ] Edit video (keep under 20 minutes)
+  - [ ] Upload to YouTube or host on server
+  - [ ] Add video link to README
+  - [ ] Ensure video is publicly accessible
+
+- [ ] **Video Hosting**
+  - [ ] Option 1: Upload to YouTube (unlisted or public)
+  - [ ] Option 2: Host on your server
+  - [ ] Option 3: Use Vimeo or other video platform
+  - [ ] Ensure videos remain accessible until at least Dec 19
+  - [ ] Test video links work from different devices
+
+- [ ] **Video Quality Checklist**
+  - [ ] Audio is clear and audible
+  - [ ] Screen recording is high resolution (1080p minimum)
+  - [ ] No background noise or distractions
+  - [ ] Cursor movements are not too fast
+  - [ ] Text on screen is readable
+  - [ ] Video has proper pacing (not too fast or slow)
+  - [ ] Transitions between sections are smooth
+
+### Phase 15: Final Submission Checklist (❌ Not Started - REQUIRED)
+
+**Submission Deadline:** Monday, December 15, 11:59 PM
+**Late Submission:** Wednesday, December 17, 11:59 PM (-10 points)
+**Server Must Be Accessible Until:** December 19
+
+- [ ] **Git Repository Preparation**
+  - [ ] Clean repo (remove `node_modules/`)
+  - [ ] Add `.gitignore` for Next.js project
+  - [ ] Well-described `README.md` in Markdown
+  - [ ] Add `.env.example` with all required variables
+  - [ ] Ensure all code is committed
+  - [ ] Tag release with version number
+  - [ ] Push to GitHub or GitLab
+  - [ ] Verify repo is accessible
+
+- [ ] **README Requirements**
+  - [ ] Links to your server (live URL)
+  - [ ] Link to pitch video
+  - [ ] Link to demo video
+  - [ ] Login credentials for existing user account with recent data
+  - [ ] **ECE 513:** Login credentials for physician account
+  - [ ] Setup instructions
+  - [ ] Environment variable documentation
+  - [ ] Dependencies list
+
+- [ ] **Code Archive Preparation**
+  - [ ] Create single archive (ZIP or TAR.GZ)
+  - [ ] Include device code (IoT firmware)
+  - [ ] Include server code (api-server)
+  - [ ] Include front-end code (web-app)
+  - [ ] Include README.md
+  - [ ] Include documentation files
+  - [ ] **Do NOT include:** `node_modules/`, `.env` files, build artifacts
+  - [ ] Test that archive extracts correctly
+
+- [ ] **Submit to D2L**
+  - [ ] Upload code archive to D2L assignment dropbox
+  - [ ] Verify submission was successful
+  - [ ] Submit before December 15, 11:59 PM (or Dec 17 with penalty)
+
+- [ ] **Server Deployment**
+  - [ ] Deploy backend API to hosting service
+  - [ ] Deploy frontend to hosting service
+  - [ ] Configure environment variables
+  - [ ] **ECE 513:** Configure HTTPS/SSL
+  - [ ] Test server is publicly accessible
+  - [ ] Verify all features work in production
+  - [ ] Keep server running until at least December 19
+
+- [ ] **Test Accounts Setup**
+  - [ ] Create test user account with recent measurement data
+  - [ ] Add at least one device to test account
+  - [ ] Generate sample measurements (multiple days)
+  - [ ] **ECE 513:** Create test physician account
+  - [ ] **ECE 513:** Associate test user with physician
+  - [ ] Document credentials in README
+
+- [ ] **Final Testing Before Submission**
+  - [ ] Test all features work from live server
+  - [ ] Test with provided credentials
+  - [ ] Verify videos are accessible
+  - [ ] Check all links in README work
+  - [ ] Test responsive design on mobile
+  - [ ] Verify all requirements are met (use grading rubric)
+
+- [ ] **Documentation for Submission (5 points total)**
+  - [ ] Complete Project Description section (2 points)
+  - [ ] Complete File Description section (1 point)
+  - [ ] Complete Results section with screenshots (0.5 points)
+  - [ ] Complete Lessons Learned section (0.5 points)
+  - [ ] Complete Challenges section (0.5 points)
+  - [ ] Complete Team Contribution table (0.25 points)
+  - [ ] Complete Reference section (0.25 points)
 
 ## File Structure
 
@@ -2144,48 +2578,66 @@ Type error: Cannot find module '@/components/...'
 
 ## 📊 Implementation Status
 
-**Overall Completion:** ~55% (Foundation complete, features in progress)
+**Overall Completion:** ~35% (Foundation 55% complete, Core Features 0% complete)
 
-| Phase | Status | Progress |
-|-------|--------|----------|
-| **1. Project Setup** | ✅ Complete | 100% |
-| **2. Authentication** | ✅ Complete | 100% |
-| **3. Dashboard/Nav** | 🟡 Partial | 80% |
-| **4. Weekly Summary** | ❌ Not Started | 0% |
-| **5. Daily View + Charts** | ❌ Not Started | 0% |
-| **6. Device Management** | ❌ Not Started | 0% |
-| **7. Account Settings** | ✅ Complete | 100% |
-| **8. Responsive Design** | 🟡 Partial | 60% |
-| **9. Physician Portal** | 🟡 Partial | 20% |
-| **10. AI Chat** | ❌ Not Started | 0% |
-| **11. Additional Pages** | ✅ Complete | 100% |
-| **12. Testing** | ❌ Not Started | 0% |
-| **13. Documentation** | 🟡 Partial | 70% |
+**Last Updated:** 2025-11-19
 
-### ✅ Completed
-- Next.js 15 + React 19 + TypeScript setup
-- Tailwind CSS v4 configuration
-- shadcn/ui component library (64+ components)
-- Better Auth integration (email, OAuth, Magic Link)
-- Sign-in and sign-up pages with full validation
-- Dashboard structure and navigation
-- Settings pages (account, appearance)
-- Admin portal (users, sessions)
-- SEO optimization (sitemap, metadata, JSON-LD)
+| Phase | Status | Progress | Notes |
+|-------|--------|----------|-------|
+| **1. Project Setup** | ✅ Complete | 100% | Next.js 15, React 19, Tailwind CSS v4 all configured |
+| **2. Authentication** | ✅ Complete | 100% | Better Auth with email, OAuth, Magic Link working |
+| **3. Dashboard/Nav** | 🟡 Partial | 60% | Structure done, missing real health data display |
+| **4. Weekly Summary** | ❌ Not Started | 0% | **CRITICAL:** Backend ready, need frontend + charts |
+| **5. Daily View + Charts** | ❌ Not Started | 0% | **CRITICAL:** Chart.js not installed yet |
+| **6. Device Management** | ❌ Not Started | 0% | **CRITICAL:** Backend ready, need full UI |
+| **7. Account Settings** | ✅ Complete | 100% | Profile, password, delete account all working |
+| **8. Responsive Design** | 🟡 Partial | 60% | Framework ready, needs chart optimization |
+| **9. Physician Portal** | ❌ Not Started | 0% | **ECE 513 REQUIRED:** 0% complete |
+| **10. AI Chat** | ❌ Not Started | 0% | Extra Credit: Backend + frontend needed |
+| **11. Additional Pages** | 🟡 Partial | 50% | Landing page exists, missing team info + references.html |
+| **12. Testing** | 🟡 Partial | 20% | Basic auth tested, need comprehensive suite |
+| **13. Documentation** | 🟡 Partial | 70% | Good code docs, missing user guide |
+| **14. Video Submission** | ❌ Not Started | 0% | **REQUIRED:** Pitch (5min) + Demo (15-20min) videos |
+| **15. Final Submission** | ❌ Not Started | 0% | **REQUIRED:** Git repo, archive, deployment, testing |
 
-### 🚧 In Progress
-- Health data visualization pages
-- Chart.js/Recharts integration
-- Responsive mobile design
-- Device management UI
+### ✅ Completed (Foundation ~55%)
+- ✅ Next.js 15 + React 19 + TypeScript setup
+- ✅ Tailwind CSS v4 configuration
+- ✅ shadcn/ui component library (64+ components)
+- ✅ Better Auth integration (email, OAuth, Magic Link)
+- ✅ Sign-in and sign-up pages with full validation
+- ✅ Dashboard structure and navigation
+- ✅ Settings pages (profile, account, security, appearance)
+- ✅ Admin portal (users, sessions, impersonation)
+- ✅ SEO optimization (sitemap, metadata, JSON-LD)
+- ✅ API client infrastructure with error handling
+- ✅ TanStack Query integration
+- ✅ Mobile navigation (hamburger menu)
 
-### ❌ To Do
-- Weekly summary view
-- Daily detailed view with charts
-- Device CRUD interface
-- Physician portal completion
-- AI chat interface (extra credit)
-- Testing suite
+### 🚧 In Progress (Partial Features)
+- 🟡 Dashboard (60%) - Structure done, missing real health data
+- 🟡 Responsive design (60%) - Framework ready, needs chart optimization
+- 🟡 Landing pages (50%) - Landing page exists, needs team info
+- 🟡 Testing (20%) - Basic auth tested, need comprehensive suite
+- 🟡 Documentation (70%) - Good code docs, missing user guide
+
+### ❌ To Do - CRITICAL (Core Features 0%)
+- ❌ **Chart.js library** - NOT INSTALLED (blocker for all visualizations)
+- ❌ **Device management UI** - Backend ready, need full frontend
+- ❌ **Weekly summary view** - Charts + statistics for last 7 days
+- ❌ **Daily detailed view** - Time-series charts for selected day
+- ❌ **Measurement display** - Show actual health data on dashboard
+- ❌ **index.html** - Team introduction page (PROJECT REQUIREMENT)
+- ❌ **reference.html** - Third-party credits page (PROJECT REQUIREMENT)
+
+### ❌ To Do - ECE 513 Requirements (0%)
+- ❌ **Physician portal** - Complete implementation (registration, patient list, views)
+- ❌ **HTTPS deployment** - SSL certificates, secure server
+- ❌ **Patient-physician association** - Backend + frontend
+
+### ❌ To Do - Extra Credit (0%)
+- ❌ **AI chat interface** - Health assistant with RAG (backend + frontend)
+- ❌ **Testing suite** - Comprehensive end-to-end tests
 
 See `IMPLEMENTATION_STATUS.md` for detailed status and metrics.
 
@@ -2197,3 +2649,86 @@ See `IMPLEMENTATION_STATUS.md` for detailed status and metrics.
 
 **Frontend Server:** http://localhost:3000
 **Backend API:** http://localhost:4000/api
+
+---
+
+## 📋 Grading Rubric Checklist (Total: 35 points)
+
+Use this checklist to ensure all graded items are complete before submission.
+
+### Web Application Requirements (ECE 413 & 513)
+
+| # | Item | Points (413) | Points (513) | Status | Notes |
+|---|------|--------------|--------------|--------|-------|
+| 1 | AWS running | 1 | 1 | ❌ | Server must be publicly accessible |
+| 2 | Index.html | 1 | 1 | 🟡 | Page exists, needs team info |
+| 3 | Information about project | 1 | 1 | 🟡 | Needs project description |
+| 4 | Team information | 1 | 1 | ❌ | Need names, emails, photos |
+| 5 | Sign in/Sign up | 2 | 1 | ✅ | Working with Better Auth |
+| 6 | Strong password | 3 | 2 | ✅ | Salted hash with bcrypt |
+| 7 | Device registration | 1 | 1 | ❌ | Backend ready, UI missing |
+| 8 | Reading Data | 1 | 1 | ❌ | Sensor integration (IoT project) |
+| 9 | Periodic reading (30 min) | 2 | 2 | ❌ | IoT firmware (state machine) |
+| 10 | README file | 2 | 2 | ✅ | Complete with instructions |
+| 11 | Git Repo | 2 | 2 | ✅ | GitHub repo with good commits |
+| 12 | Video pitch submission | 3 | 3 | ❌ | 5-minute pitch video |
+| 13 | Coding style | 2 | 2 | ✅ | Well-commented TypeScript |
+| 14 | Responsive pages | 1 | 1 | 🟡 | Framework ready, charts needed |
+| 15 | Video demo submission | 1 | 1 | ❌ | 15-20 minute demo |
+| 16 | Code submission | 1 | 1 | ❌ | Archive ready for D2L |
+| 17 | Store data in device | 3 | 2 | ❌ | IoT: 24-hour local storage |
+| 18 | Charts | 1 | 1 | ❌ | Chart.js visualization |
+| 19 | Localhost running | 1 | 1 | ✅ | Evidence in demo video |
+| 20 | HTTPS implementation | - | 3 | ❌ | **ECE 513 ONLY:** SSL/TLS |
+| 21 | Project Documentation | 5 | 5 | 🟡 | Partial (needs completion) |
+
+**ECE 413 Total:** 35 points
+**ECE 513 Total:** 35 points
+
+### Extra Credit & Penalties
+
+| # | Item | Points | Status | Notes |
+|---|------|--------|--------|-------|
+| 22 | LLM Health AI Assistant | +5 | ❌ | Chat interface + RAG backend |
+| 23 | Milestone (Nov 21) | +3 | ❌ | Early submission bonus |
+| 24 | Late submission (Dec 17) | -10 | N/A | Avoid this! |
+
+### Detailed Requirements Checklist
+
+#### Core Features Checklist
+- [x] User can create account with email and strong password
+- [x] User can login and logout
+- [ ] User can register at least one device (backend ready, UI missing)
+- [x] User can update account information (except email)
+- [ ] User can add and remove devices (backend ready, UI missing)
+- [x] User can have multiple devices (backend supports it)
+- [ ] Weekly summary view shows avg/min/max heart rate (last 7 days)
+- [ ] Daily view plots heart rate and SpO2 on separate charts
+- [ ] Charts show time of day on X-axis, measurement on Y-axis
+- [ ] Min/max values visually indicated on charts
+- [ ] User can define time-of-day range for measurements
+- [ ] User can define measurement frequency
+- [x] Web app has navigation menu
+- [x] Web app uses responsive design (desktop, tablet, mobile)
+- [ ] index.html page introduces team and project (page exists, missing team info)
+- [ ] reference.html page lists third-party APIs, libraries, code
+
+#### ECE 513 Additional Checklist
+- [ ] Server uses HTTPS
+- [ ] Physician can register account
+- [ ] Users can select physician on account page
+- [ ] Physician portal has patient view (list all patients)
+- [ ] Patient view shows 7-day avg/max/min heart rate
+- [ ] Physician can select patient to view summary
+- [ ] Patient summary view shows weekly data
+- [ ] Patient summary includes controls to adjust measurement frequency
+- [ ] Patient detailed view shows same info as user daily view
+
+#### Extra Credit Checklist
+- [ ] Chat interface for AI assistant
+- [ ] Local LLM (Ollama) running
+- [ ] RAG pattern implemented (retrieve user data, construct prompt)
+- [ ] LLM responses based only on user's health data
+- [ ] Documented in final submission
+
+---

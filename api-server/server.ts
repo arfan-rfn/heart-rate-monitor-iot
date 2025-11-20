@@ -32,11 +32,12 @@ const startServer = async () => {
     // Start server
     const server = app.listen(PORT, () => {
       console.log('\n' + '='.repeat(50));
-      console.log('🚀 Heart Track API Server');
+      console.log('🚀 PulseConnect API Server');
       console.log('='.repeat(50));
       console.log(`📍 Environment: ${NODE_ENV}`);
       console.log(`🌐 Server: http://${HOST}:${PORT}`);
       console.log(`🔗 API: http://${HOST}:${PORT}/api`);
+      console.log(`📖 API Docs: http://${HOST}:${PORT}/api-docs`);
       console.log(`❤️  Health: http://${HOST}:${PORT}/health`);
       console.log('='.repeat(50) + '\n');
     });

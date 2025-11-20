@@ -57,3 +57,6 @@ pids/
 # Temporary files
 tmp/
 temp/
+
+# Auto-generated OpenAPI spec
+openapi.json

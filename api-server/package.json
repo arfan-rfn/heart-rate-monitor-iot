@@ -1,7 +1,7 @@
 {
   "name": "api-server",
   "version": "1.0.0",
-  "description": "This project contains the Node.js/Express backend server that provides RESTful API endpoints for the Heart Track application. It manages user authentication, device registration, health data storage in MongoDB, and serves as the bridge between IoT devices and the web frontend.",
+  "description": "This project contains the Node.js/Express backend server that provides RESTful API endpoints for the PulseConnect application. It manages user authentication, device registration, health data storage in MongoDB, and serves as the bridge between IoT devices and the web frontend.",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon --exec tsx server.ts",
@@ -10,7 +10,9 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
     "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
     "migrate": "better-auth migrate",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "generate-openapi": "tsx scripts/generate-openapi.ts",
+    "generate-client": "npm run generate-openapi && openapi-typescript ./openapi.json -o ../web-app/src/api/generated/api-types.ts && tsx scripts/generate-client-wrapper.ts"
   },
   "keywords": [
     "authentication",
@@ -19,10 +21,11 @@
     "express",
     "mongodb"
   ],
-  "author": "Heart Track Team",
+  "author": "PulseConnect Team",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.1.0",
     "bcrypt": "^6.0.0",
     "better-auth": "^1.3.29",
     "cors": "^2.8.5",
@@ -31,7 +34,10 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "mongoose": "^8.19.2",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "openapi-typescript": "^7.10.1",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@better-auth/cli": "^1.3.29",
@@ -42,6 +48,7 @@
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.9.1",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-ui-express": "^4.1.8",
     "jest": "^30.2.0",
     "nodemon": "^3.1.10",
     "supertest": "^7.1.4",
