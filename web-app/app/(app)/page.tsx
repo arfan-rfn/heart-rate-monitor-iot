@@ -1,29 +1,40 @@
-import { Footer } from "@/components/footer"
-import { Hero } from "@/components/hero"
-import { JsonLd } from "@/components/json-ld";
-import { getSEOTags } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld"
+import { getSEOTags } from "@/lib/seo"
+import { siteConfig } from "@/config/site"
+import {
+  HeroSection,
+  AboutSection,
+  FeaturesSection,
+  HowItWorksSection,
+  TeamSection,
+  TechStackSection,
+  CTASection,
+} from "@/components/homepage"
 
 export const metadata = getSEOTags({
-  title: "NextJS Template",
-  description: "A NextJS template with Tailwind CSS and TypeScript.",
+  title: `${siteConfig.name} - IoT Heart Rate Monitoring`,
+  description: siteConfig.description,
   relativeUrl: "/",
-}
-);
-
+})
 
 export default function IndexPage() {
-
   const jsonLd = {
-    name: "NextJS Template",
-    description: "A NextJS template with Tailwind CSS and TypeScript.",
+    name: siteConfig.name,
+    description: siteConfig.description,
     relativeUrl: "/",
   }
 
   return (
     <>
       <JsonLd data={jsonLd} />
-      <main>
-        <Hero />
+      <main className="flex-1">
+        <HeroSection />
+        <AboutSection />
+        <FeaturesSection />
+        <HowItWorksSection />
+        <TeamSection />
+        <TechStackSection />
+        <CTASection />
       </main>
     </>
   )

@@ -3,6 +3,9 @@ import {
   getAllPatients,
   getPatientSummary,
   getPatientDailyMeasurements,
+  getPatientDailyAggregates,
+  getPatientHistory,
+  getPatientAllTimeStats,
   updatePatientDeviceConfig,
 } from './controller.js';
 import { authenticate } from '../../middleware/auth/index.js';
@@ -39,6 +42,28 @@ router.get('/patients/:patientId/summary', getPatientSummary);
  * Required by ECE 513 spec: "patient's detailed day view"
  */
 router.get('/patients/:patientId/daily/:date', getPatientDailyMeasurements);
+
+/**
+ * Analytics Routes - Extended functionality for comprehensive patient monitoring
+ */
+
+/**
+ * Get patient's daily aggregates for trend charts
+ * Query params: days (default: 30)
+ */
+router.get('/patients/:patientId/analytics/daily-aggregates', getPatientDailyAggregates);
+
+/**
+ * Get patient's full measurement history with optional date range filtering
+ * Query params: startDate, endDate, limit, page
+ */
+router.get('/patients/:patientId/analytics/history', getPatientHistory);
+
+/**
+ * Get patient's all-time statistics
+ * Provides comprehensive lifetime health metrics
+ */
+router.get('/patients/:patientId/analytics/all-time', getPatientAllTimeStats);
 
 /**
  * Update patient's device configuration

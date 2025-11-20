@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { ObjectId } from 'mongodb';
 import { Measurement } from '../../models/measurements/index.js';
 import { Device } from '../../models/devices/index.js';
 import { asyncHandler, AppError } from '../../middleware/error/index.js';
@@ -35,30 +36,64 @@ export const getAllPatients = asyncHandler(async (req: Request, res: Response) =
     });
   }
 
-  // Fetch 7-day summary for each patient in parallel
+  // Fetch comprehensive stats for each patient in parallel
   const patientSummaries = await Promise.all(
     patients.map(async (patient: any) => {
-      const summary = await Measurement.getWeeklySummary(patient.id);
+      // Extract patient ID (Better Auth uses 'id' field, but also check _id as fallback)
+      const patientId = patient.id || patient._id?.toString();
+
+      // Get 7-day summary
+      const weeklySummary = await Measurement.getWeeklySummary(patientId);
+
+      // Get total measurement count (all-time)
+      const totalMeasurements = await Measurement.countDocuments({ userId: patientId });
+
+      // Get device count
+      const deviceCount = await Device.countDocuments({ userId: patientId });
+
+      // Get active device count
+      const activeDeviceCount = await Device.countDocuments({
+        userId: patientId,
+        status: 'active',
+      });
 
       return {
-        id: patient.id,
+        id: patientId,
         name: patient.name,
         email: patient.email,
-        summary: summary
-          ? {
-              averageHeartRate: Math.round(summary.averageHeartRate * 10) / 10,
-              minHeartRate: summary.minHeartRate,
-              maxHeartRate: summary.maxHeartRate,
-              totalMeasurements: summary.totalMeasurements,
-              lastMeasurement: summary.lastMeasurement?.toISOString(),
-            }
-          : {
-              averageHeartRate: 0,
-              minHeartRate: 0,
-              maxHeartRate: 0,
-              totalMeasurements: 0,
-              lastMeasurement: null,
-            },
+        stats: {
+          // 7-day summary
+          weekly: weeklySummary
+            ? {
+                averageHeartRate: Math.round(weeklySummary.averageHeartRate * 10) / 10,
+                minHeartRate: weeklySummary.minHeartRate,
+                maxHeartRate: weeklySummary.maxHeartRate,
+                averageSpO2: Math.round(weeklySummary.averageSpO2 * 10) / 10,
+                totalMeasurements: weeklySummary.totalMeasurements,
+                lastMeasurement: weeklySummary.lastMeasurement?.toISOString(),
+              }
+            : {
+                averageHeartRate: 0,
+                minHeartRate: 0,
+                maxHeartRate: 0,
+                averageSpO2: 0,
+                totalMeasurements: 0,
+                lastMeasurement: null,
+              },
+          // High-level overview stats
+          overview: {
+            totalMeasurementsAllTime: totalMeasurements,
+            totalDevices: deviceCount,
+            activeDevices: activeDeviceCount,
+            hasRecentData: weeklySummary ? weeklySummary.totalMeasurements > 0 : false,
+            monitoringStatus:
+              activeDeviceCount > 0 && weeklySummary && weeklySummary.totalMeasurements > 0
+                ? 'active'
+                : activeDeviceCount > 0
+                ? 'inactive'
+                : 'no_devices',
+          },
+        },
       };
     })
   );
@@ -95,7 +130,12 @@ export const getPatientSummary = asyncHandler(async (req: Request, res: Response
   // Get patient info from MongoDB
   const db = getMongoDbInstance();
   const userCollection = db.collection('user');
-  const patient = await userCollection.findOne({ id: patientId });
+  const patient = await userCollection.findOne({
+    $or: [
+      { id: patientId },
+      { _id: new ObjectId(patientId) }
+    ]
+  });
 
   if (!patient) {
     throw new AppError('Patient not found', 404, 'PATIENT_NOT_FOUND');
@@ -113,7 +153,7 @@ export const getPatientSummary = asyncHandler(async (req: Request, res: Response
     success: true,
     data: {
       patient: {
-        id: patient.id,
+        id: patient.id || patient._id?.toString(),
         name: patient.name,
         email: patient.email,
       },
@@ -181,7 +221,12 @@ export const getPatientDailyMeasurements = asyncHandler(
     // Get patient info from MongoDB
     const db = getMongoDbInstance();
     const userCollection = db.collection('user');
-    const patient = await userCollection.findOne({ id: patientId });
+    const patient = await userCollection.findOne({
+      $or: [
+        { id: patientId },
+        { _id: new ObjectId(patientId) }
+      ]
+    });
 
     if (!patient) {
       throw new AppError('Patient not found', 404, 'PATIENT_NOT_FOUND');
@@ -195,7 +240,7 @@ export const getPatientDailyMeasurements = asyncHandler(
       success: true,
       data: {
         patient: {
-          id: patient.id,
+          id: patient.id || patient._id?.toString(),
           name: patient.name,
           email: patient.email,
         },
@@ -209,6 +254,293 @@ export const getPatientDailyMeasurements = asyncHandler(
           deviceId: m.deviceId,
         })),
         count: measurements.length,
+      },
+    });
+  }
+);
+
+/**
+ * Get patient's daily aggregates (for charting)
+ * GET /api/physicians/patients/:patientId/analytics/daily-aggregates?days=30
+ * Auth: JWT + requirePhysician + patient verification
+ *
+ * Provides daily averages, min/max for trend charts
+ */
+export const getPatientDailyAggregates = asyncHandler(
+  async (req: Request, res: Response) => {
+    const physicianId = req.user?.id;
+    const { patientId } = req.params;
+    const { days = 30 } = req.query;
+
+    if (!physicianId) {
+      throw new AppError('Physician not authenticated', 401, 'UNAUTHORIZED');
+    }
+
+    // Verify patient belongs to physician
+    await verifyPhysicianPatientRelationship(physicianId, patientId);
+
+    // Get patient info
+    const db = getMongoDbInstance();
+    const userCollection = db.collection('user');
+    const patient = await userCollection.findOne({
+      $or: [
+        { id: patientId },
+        { _id: new ObjectId(patientId) }
+      ]
+    });
+
+    if (!patient) {
+      throw new AppError('Patient not found', 404, 'PATIENT_NOT_FOUND');
+    }
+
+    // Get daily aggregates
+    const daysNum = parseInt(days as string);
+    const aggregates = await Measurement.getDailyAggregates(patientId, daysNum);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        patient: {
+          id: patient.id || patient._id?.toString(),
+          name: patient.name,
+          email: patient.email,
+        },
+        aggregates,
+        days: daysNum,
+      },
+    });
+  }
+);
+
+/**
+ * Get patient's full measurement history
+ * GET /api/physicians/patients/:patientId/analytics/history?startDate=...&endDate=...&limit=1000
+ * Auth: JWT + requirePhysician + patient verification
+ *
+ * Allows physicians to see complete patient history with optional date range filtering
+ */
+export const getPatientHistory = asyncHandler(async (req: Request, res: Response) => {
+  const physicianId = req.user?.id;
+  const { patientId } = req.params;
+  const { startDate, endDate, limit = 1000, page = 1 } = req.query;
+
+  if (!physicianId) {
+    throw new AppError('Physician not authenticated', 401, 'UNAUTHORIZED');
+  }
+
+  // Verify patient belongs to physician
+  await verifyPhysicianPatientRelationship(physicianId, patientId);
+
+  // Get patient info
+  const db = getMongoDbInstance();
+  const userCollection = db.collection('user');
+  const patient = await userCollection.findOne({
+    $or: [
+      { id: patientId },
+      { _id: new ObjectId(patientId) }
+    ]
+  });
+
+  if (!patient) {
+    throw new AppError('Patient not found', 404, 'PATIENT_NOT_FOUND');
+  }
+
+  // Build query
+  const query: any = { userId: patientId };
+
+  // Add date range filter
+  if (startDate || endDate) {
+    query.timestamp = {};
+    if (startDate) {
+      query.timestamp.$gte = new Date(startDate as string);
+    }
+    if (endDate) {
+      query.timestamp.$lte = new Date(endDate as string);
+    }
+  }
+
+  // Pagination
+  const limitNum = parseInt(limit as string);
+  const pageNum = parseInt(page as string);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Get measurements
+  const measurements = await Measurement.find(query)
+    .sort({ timestamp: -1 })
+    .skip(skip)
+    .limit(limitNum);
+
+  // Get total count
+  const total = await Measurement.countDocuments(query);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      patient: {
+        id: patient.id || patient._id?.toString(),
+        name: patient.name,
+        email: patient.email,
+      },
+      measurements: measurements.map((m: any) => ({
+        timestamp: m.timestamp,
+        heartRate: m.heartRate,
+        spO2: m.spO2,
+        quality: m.quality,
+        confidence: m.confidence,
+        deviceId: m.deviceId,
+      })),
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum),
+      },
+    },
+  });
+});
+
+/**
+ * Get patient's all-time statistics
+ * GET /api/physicians/patients/:patientId/analytics/all-time
+ * Auth: JWT + requirePhysician + patient verification
+ *
+ * Provides comprehensive lifetime statistics for the patient
+ */
+export const getPatientAllTimeStats = asyncHandler(
+  async (req: Request, res: Response) => {
+    const physicianId = req.user?.id;
+    const { patientId } = req.params;
+
+    if (!physicianId) {
+      throw new AppError('Physician not authenticated', 401, 'UNAUTHORIZED');
+    }
+
+    // Verify patient belongs to physician
+    await verifyPhysicianPatientRelationship(physicianId, patientId);
+
+    // Get patient info
+    const db = getMongoDbInstance();
+    const userCollection = db.collection('user');
+    const patient = await userCollection.findOne({
+      $or: [
+        { id: patientId },
+        { _id: new ObjectId(patientId) }
+      ]
+    });
+
+    if (!patient) {
+      throw new AppError('Patient not found', 404, 'PATIENT_NOT_FOUND');
+    }
+
+    // Get all-time statistics
+    const stats = await Measurement.aggregate([
+      {
+        $match: { userId: patientId },
+      },
+      {
+        $group: {
+          _id: null,
+          totalMeasurements: { $sum: 1 },
+          averageHeartRate: { $avg: '$heartRate' },
+          minHeartRate: { $min: '$heartRate' },
+          maxHeartRate: { $max: '$heartRate' },
+          averageSpO2: { $avg: '$spO2' },
+          minSpO2: { $min: '$spO2' },
+          maxSpO2: { $max: '$spO2' },
+          firstMeasurement: { $min: '$timestamp' },
+          lastMeasurement: { $max: '$timestamp' },
+        },
+      },
+    ]);
+
+    const result = stats[0] || {
+      totalMeasurements: 0,
+      averageHeartRate: 0,
+      minHeartRate: 0,
+      maxHeartRate: 0,
+      averageSpO2: 0,
+      minSpO2: 0,
+      maxSpO2: 0,
+      firstMeasurement: null,
+      lastMeasurement: null,
+    };
+
+    // Get lowest and highest heart rate records
+    const lowestHR = await Measurement.findOne({ userId: patientId })
+      .sort({ heartRate: 1 })
+      .select('heartRate timestamp')
+      .lean();
+
+    const highestHR = await Measurement.findOne({ userId: patientId })
+      .sort({ heartRate: -1 })
+      .select('heartRate timestamp')
+      .lean();
+
+    // Get lowest and highest SpO2 records
+    const lowestSpO2 = await Measurement.findOne({ userId: patientId })
+      .sort({ spO2: 1 })
+      .select('spO2 timestamp')
+      .lean();
+
+    const highestSpO2 = await Measurement.findOne({ userId: patientId })
+      .sort({ spO2: -1 })
+      .select('spO2 timestamp')
+      .lean();
+
+    // Calculate days tracked (distinct dates)
+    const distinctDates = await Measurement.aggregate([
+      { $match: { userId: patientId } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$timestamp' }
+          }
+        }
+      },
+      { $count: 'total' }
+    ]);
+    const daysTracked = distinctDates[0]?.total || 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        patient: {
+          id: patient.id || patient._id?.toString(),
+          name: patient.name,
+          email: patient.email,
+        },
+        stats: {
+          totalMeasurements: result.totalMeasurements,
+          firstMeasurement: result.firstMeasurement?.toISOString() || null,
+          lastMeasurement: result.lastMeasurement?.toISOString() || null,
+          heartRate: {
+            overallAverage: Math.round(result.averageHeartRate * 10) / 10,
+            overallMin: result.minHeartRate,
+            overallMax: result.maxHeartRate,
+            lowestRecorded: lowestHR ? {
+              value: lowestHR.heartRate,
+              timestamp: lowestHR.timestamp.toISOString()
+            } : null,
+            highestRecorded: highestHR ? {
+              value: highestHR.heartRate,
+              timestamp: highestHR.timestamp.toISOString()
+            } : null,
+          },
+          spO2: {
+            overallAverage: Math.round(result.averageSpO2 * 10) / 10,
+            overallMin: result.minSpO2,
+            overallMax: result.maxSpO2,
+            lowestRecorded: lowestSpO2 ? {
+              value: lowestSpO2.spO2,
+              timestamp: lowestSpO2.timestamp.toISOString()
+            } : null,
+            highestRecorded: highestSpO2 ? {
+              value: highestSpO2.spO2,
+              timestamp: highestSpO2.timestamp.toISOString()
+            } : null,
+          },
+          daysTracked,
+        },
       },
     });
   }

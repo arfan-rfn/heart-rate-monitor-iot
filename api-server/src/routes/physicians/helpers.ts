@@ -1,17 +1,19 @@
 import { AppError } from '../../middleware/error/index.js';
 import { getMongoDbInstance } from '../../config/database.js';
+import { ObjectId } from 'mongodb';
 
 /**
- * Verify that a patient belongs to a specific physician
+ * Verify that a patient exists and is not a physician
  *
- * This function ensures three-layer security:
+ * This function ensures:
  * 1. Patient exists in the system
- * 2. Patient is associated with THIS physician
- * 3. User is actually a patient (not another physician)
+ * 2. User is actually a patient (not another physician)
  *
- * @param physicianId - The physician's user ID
- * @param patientId - The patient's user ID
- * @throws AppError if patient not found (404) or not associated (403)
+ * Note: Per requirements, physicians can access ALL patients, not just associated ones
+ *
+ * @param physicianId - The physician's user ID (for future use)
+ * @param patientId - The patient's user ID (MongoDB ObjectId as string)
+ * @throws AppError if patient not found (404)
  */
 export async function verifyPhysicianPatientRelationship(
   physicianId: string,
@@ -20,52 +22,44 @@ export async function verifyPhysicianPatientRelationship(
   const db = getMongoDbInstance();
   const userCollection = db.collection('user');
 
-  // Single query with all validation criteria
+  // Try to find patient by both 'id' field and '_id' field
   const patient = await userCollection.findOne({
-    id: patientId,
-    physicianId,
-    role: { $ne: 'physician' },
+    $or: [
+      { id: patientId },
+      { _id: new ObjectId(patientId) }
+    ],
+    role: { $ne: 'physician' }
   });
 
-  // Patient not found or not associated with this physician
   if (!patient) {
-    // Check if patient exists at all (for better error messaging)
-    const userExists = await userCollection.findOne({ id: patientId });
-
-    if (!userExists) {
-      throw new AppError('Patient not found', 404, 'PATIENT_NOT_FOUND');
-    }
-
-    // Patient exists but not associated with this physician
-    throw new AppError(
-      'Access denied: Patient is not associated with this physician',
-      403,
-      'FORBIDDEN'
-    );
+    throw new AppError('Patient not found', 404, 'PATIENT_NOT_FOUND');
   }
 }
 
 /**
- * Get all patients associated with a specific physician
+ * Get all patients (users with role='user')
  *
- * Retrieves patients who have:
- * - physicianId matching the given physician
- * - role that is NOT 'physician' (regular users only)
+ * Returns ALL users in the system who have role='user' or no role set (defaults to 'user').
+ * This allows physicians to see all available patients in the system.
  *
  * Results are sorted by name for consistent ordering
  *
- * @param physicianId - The physician's user ID
- * @returns Array of patient user objects
+ * @param physicianId - The physician's user ID (not used in filtering, kept for future use)
+ * @returns Array of all patient user objects
  */
 export async function getPatientsForPhysician(physicianId: string) {
   const db = getMongoDbInstance();
   const userCollection = db.collection('user');
 
-  // Query with clean filtering and sorting
+  // Get all users who are NOT physicians
+  // This includes users with role='user' or users with no role field (default is 'user')
   const patients = await userCollection
     .find({
-      physicianId,
-      role: { $ne: 'physician' },
+      $or: [
+        { role: 'user' },
+        { role: { $exists: false } },  // Users without role field (default to 'user')
+        { role: null }                 // Users with null role
+      ]
     })
     .sort({ name: 1 })
     .toArray();

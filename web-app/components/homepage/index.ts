@@ -1,0 +1,7 @@
+export { HeroSection } from "./hero-section"
+export { AboutSection } from "./about-section"
+export { FeaturesSection } from "./features-section"
+export { HowItWorksSection } from "./how-it-works-section"
+export { TeamSection } from "./team-section"
+export { TechStackSection } from "./tech-stack-section"
+export { CTASection } from "./cta-section"

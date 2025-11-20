@@ -1,7 +1,7 @@
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
-  name: "PulseConnect",
+  name: "Heart Track",
   description:
     "A low-cost IoT-enabled web application for monitoring heart rate and blood oxygen saturation levels throughout the day.",
   mainNav: [
@@ -30,7 +30,7 @@ export const siteConfig = {
   // Project Information
   project: {
     tagline: "Monitor Your Heart Health with IoT Technology",
-    description: "PulseConnect is a comprehensive IoT-enabled health monitoring system that allows users to track their heart rate and blood oxygen saturation levels throughout the day. Using a Particle Photon device with a MAX30102 sensor, users receive periodic reminders to take measurements, which are automatically synced to a secure cloud platform for real-time visualization and analysis.",
+    description: "Heart Track is a comprehensive IoT-enabled health monitoring system that allows users to track their heart rate and blood oxygen saturation levels throughout the day. Using a Particle Photon device with a MAX30102 sensor, users receive periodic reminders to take measurements, which are automatically synced to a secure cloud platform for real-time visualization and analysis.",
     features: [
       {
         title: "Real-Time Monitoring",
@@ -135,32 +135,32 @@ export const siteConfig = {
   // Technology Stack
   techStack: {
     frontend: [
-      { name: "Next.js 15", description: "React framework with App Router", url: "https://nextjs.org" },
-      { name: "React 19", description: "UI component library", url: "https://react.dev" },
-      { name: "TypeScript", description: "Type-safe JavaScript", url: "https://www.typescriptlang.org" },
-      { name: "Tailwind CSS", description: "Utility-first CSS framework", url: "https://tailwindcss.com" },
-      { name: "shadcn/ui", description: "Re-usable component library", url: "https://ui.shadcn.com" },
-      { name: "Recharts", description: "Data visualization library", url: "https://recharts.org" },
-      { name: "TanStack Query", description: "Data synchronization", url: "https://tanstack.com/query" },
+      { name: "Next.js 15", description: "React framework with App Router" },
+      { name: "React 19", description: "UI component library" },
+      { name: "TypeScript", description: "Type-safe JavaScript" },
+      { name: "Tailwind CSS", description: "Utility-first CSS framework" },
+      { name: "shadcn/ui", description: "Re-usable component library" },
+      { name: "Recharts", description: "Data visualization library" },
     ],
     backend: [
-      { name: "Node.js", description: "JavaScript runtime", url: "https://nodejs.org" },
-      { name: "Express.js", description: "Web application framework", url: "https://expressjs.com" },
-      { name: "MongoDB", description: "NoSQL database", url: "https://www.mongodb.com" },
-      { name: "Mongoose", description: "MongoDB object modeling", url: "https://mongoosejs.com" },
-      { name: "Better Auth", description: "Authentication library", url: "https://www.better-auth.com" },
-      { name: "bcrypt", description: "Password hashing", url: "https://github.com/kelektiv/node.bcrypt.js" },
+      { name: "Node.js", description: "JavaScript runtime" },
+      { name: "Hono", description: "Fast web framework" },
+      { name: "MongoDB", description: "NoSQL database" },
+      { name: "Mongoose", description: "MongoDB object modeling" },
+      { name: "Better Auth", description: "Authentication library" },
+      { name: "JWT", description: "Token-based authentication" },
     ],
     iot: [
-      { name: "Particle Photon", description: "IoT development board", url: "https://docs.particle.io/photon" },
-      { name: "MAX30102", description: "Heart rate & SpO2 sensor", url: "https://www.maximintegrated.com/en/products/interface/sensor-interface/MAX30102.html" },
-      { name: "C++", description: "Firmware programming", url: "https://isocpp.org" },
-      { name: "State Machines", description: "Control logic pattern", url: "https://en.wikipedia.org/wiki/Finite-state_machine" },
+      { name: "Particle Photon", description: "IoT development board" },
+      { name: "MAX30102", description: "Heart rate & SpO2 sensor" },
+      { name: "C++", description: "Firmware programming language" },
+      { name: "State Machines", description: "Synchronous control logic" },
     ],
     deployment: [
-      { name: "Vercel", description: "Frontend hosting platform", url: "https://vercel.com" },
-      { name: "AWS EC2", description: "Backend server hosting", url: "https://aws.amazon.com/ec2" },
-      { name: "MongoDB Atlas", description: "Cloud database hosting", url: "https://www.mongodb.com/atlas" },
+      { name: "Vercel", description: "Next.js hosting platform" },
+      { name: "Cloudflare Workers", description: "Backend API hosting" },
+      { name: "MongoDB Atlas", description: "Cloud database hosting" },
+      { name: "AWS", description: "Cloud infrastructure" },
     ],
   },
 

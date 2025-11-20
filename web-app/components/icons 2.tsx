@@ -100,15 +100,6 @@ export const Icons = {
   Activity: Activity,
   MoreVertical: MoreVertical,
   Pause: Pause,
-  Wifi: Wifi,
-  BarChart3: BarChart3,
-  Database: Database,
-  Stethoscope: Stethoscope,
-  UserPlus: UserPlus,
-  Cloud: Cloud,
-  TrendingUp: TrendingUp,
-  ArrowRight: ArrowRight,
-  LinkedIn: Linkedin,
   Logo: (props: LucideProps) => {
     const height = props.height as unknown as number || props.size as unknown as number || 24;
     const width = props.width as unknown as number || props.size as unknown as number || 24;

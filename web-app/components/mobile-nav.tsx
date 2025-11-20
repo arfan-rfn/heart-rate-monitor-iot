@@ -10,9 +10,29 @@ import { Icons } from "@/components/icons"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./ui/sheet"
 import { Button } from "./ui/button"
 import { ScrollArea } from "./ui/scroll-area"
+import { useSession } from "@/lib/auth"
 
 export function MobileNav() {
 	const [open, setOpen] = React.useState(false)
+	const { data: session } = useSession()
+
+	// Add "My Patients" link for physician users
+	const navigationItems = React.useMemo(() => {
+		const baseItems = siteConfig.mainNav || []
+
+		// If user is a physician, add "My Patients" link
+		if (session?.user?.role === 'physician') {
+			return [
+				...baseItems,
+				{
+					title: "My Patients",
+					href: "/physician",
+				},
+			]
+		}
+
+		return baseItems
+	}, [session?.user?.role])
 
 	return (
 		<Sheet open={open} onOpenChange={setOpen}>
@@ -38,7 +58,7 @@ export function MobileNav() {
 				</MobileLink>
 				<ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
 					<div className="flex flex-col space-y-3">
-						{siteConfig.mainNav?.map(
+						{navigationItems?.map(
 							(item) =>
 								item.href && (
 									<MobileLink
