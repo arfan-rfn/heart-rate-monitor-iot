@@ -6,7 +6,7 @@ This project contains the Node.js/Express backend server that provides RESTful A
 
 ## Technology Stack
 
-- **Runtime:** Node.js (v18+ LTS recommended)
+- **Runtime:** Node.js (v20+ LTS recommended)
 - **Framework:** Express.js
 - **Database:** MongoDB with Mongoose ODM
 - **Authentication:** JWT (JSON Web Tokens)
@@ -67,7 +67,7 @@ This project contains the Node.js/Express backend server that provides RESTful A
   - [ ] Set CORS allowed origins
 
 - [ ] **MongoDB Database Setup**
-  - [ ] Set up MongoDB Atlas (cloud) or local MongoDB
+  - [ ] Set up MongoDB Atlas (cloud)
   - [ ] Create database named `hearttrack`
   - [ ] Configure connection pooling
   - [ ] Set up database indexes
