@@ -51,7 +51,7 @@ export function ExportModal({ trigger }: ExportModalProps) {
 
   const filters = getDateFilters()
   const { data: measurementsData } = useMeasurements(filters, { enabled: open })
-  const { data: summary } = useWeeklySummary({ enabled: open && exportFormat === 'pdf' })
+  const { data: summary } = useWeeklySummary(undefined, { enabled: open && exportFormat === 'pdf' })
 
   const measurements = measurementsData?.measurements || []
   const estimatedSize = getEstimatedFileSize(measurements.length)

@@ -5,6 +5,7 @@
  * Main dashboard with heart rate monitoring visualizations and real-time updates
  */
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -18,6 +19,7 @@ import { StatsCards } from "@/components/dashboard/stats-cards"
 import { WeeklyTrendsChart } from "@/components/dashboard/weekly-trends-chart"
 import { DailyDetailedChart } from "@/components/dashboard/daily-detailed-chart"
 import { ExportModal } from "@/components/dashboard/export-modal"
+import { DeviceFilter } from "@/components/dashboard/device-filter"
 import { RefreshCw } from "lucide-react"
 import { useWeeklySummary } from "@/hooks/use-measurements"
 import { format } from "date-fns"
@@ -25,7 +27,8 @@ import { format } from "date-fns"
 export default function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { data: user, isLoading: userLoading } = useUser()
-  const { data: summary, isLoading: summaryLoading, refetch, dataUpdatedAt } = useWeeklySummary()
+  const [selectedDevice, setSelectedDevice] = useState<string | undefined>(undefined)
+  const { data: summary, isLoading: summaryLoading, refetch, dataUpdatedAt } = useWeeklySummary(selectedDevice)
   const router = useRouter()
 
   // Combined loading state
@@ -39,48 +42,56 @@ export default function DashboardPage() {
     <div className="min-h-screen p-4 pb-20">
       <div className="w-full max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="size-16">
-              <AvatarImage
-                src={user?.avatarUrl || undefined}
-                alt={user?.name || user?.email}
-              />
-              <AvatarFallback className="bg-muted" delayMs={50}>
-                <Icons.User className="w-8 h-8 text-muted-foreground" />
-              </AvatarFallback>
-            </Avatar>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="size-16">
+                <AvatarImage
+                  src={user?.avatarUrl || undefined}
+                  alt={user?.name || user?.email}
+                />
+                <AvatarFallback className="bg-muted" delayMs={50}>
+                  <Icons.User className="w-8 h-8 text-muted-foreground" />
+                </AvatarFallback>
+              </Avatar>
 
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Welcome back, {user?.name?.split(' ')[0] || 'User'}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Health Monitoring Dashboard
-              </p>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  Welcome back, {user?.name?.split(' ')[0] || 'User'}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Health Monitoring Dashboard
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {dataUpdatedAt && (
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  Updated {format(dataUpdatedAt, 'h:mm a')}
+                </span>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <ExportModal />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {dataUpdatedAt && (
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                Updated {format(dataUpdatedAt, 'h:mm a')}
-              </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <ExportModal />
-          </div>
+          {/* Device Filter */}
+          <DeviceFilter
+            value={selectedDevice}
+            onChange={setSelectedDevice}
+          />
         </div>
 
         {/* Real-time Stats Cards */}
-        <StatsCards />
+        <StatsCards deviceId={selectedDevice} />
 
         {/* Getting Started Guide (only show if no devices) */}
         {!userLoading && (user?.deviceCount === 0) && (
@@ -119,12 +130,12 @@ export default function DashboardPage() {
 
         {/* Weekly Trends Chart */}
         <div id="weekly-trends-chart">
-          <WeeklyTrendsChart />
+          <WeeklyTrendsChart deviceId={selectedDevice} />
         </div>
 
         {/* Daily Detailed Chart */}
         <div id="daily-detailed-chart">
-          <DailyDetailedChart />
+          <DailyDetailedChart deviceId={selectedDevice} />
         </div>
 
         {/* Device Management Quick Card */}

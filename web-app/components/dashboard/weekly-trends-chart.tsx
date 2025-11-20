@@ -31,8 +31,12 @@ const chartConfig = {
   }
 } satisfies ChartConfig
 
-export function WeeklyTrendsChart() {
-  const { data: aggregates, isLoading, error } = useDailyAggregates(7)
+interface WeeklyTrendsChartProps {
+  deviceId?: string
+}
+
+export function WeeklyTrendsChart({ deviceId }: WeeklyTrendsChartProps) {
+  const { data: aggregates, isLoading, error } = useDailyAggregates(7, deviceId)
 
   if (isLoading) {
     return (

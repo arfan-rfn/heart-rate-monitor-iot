@@ -35,7 +35,7 @@ export const getAllPatients = asyncHandler(async (req: Request, res: Response) =
     });
   }
 
-  // Get 7-day summary for each patient
+  // Fetch 7-day summary for each patient in parallel
   const patientSummaries = await Promise.all(
     patients.map(async (patient: any) => {
       const summary = await Measurement.getWeeklySummary(patient.id);
@@ -63,8 +63,7 @@ export const getAllPatients = asyncHandler(async (req: Request, res: Response) =
     })
   );
 
-  // Sort by name
-  patientSummaries.sort((a: any, b: any) => a.name.localeCompare(b.name));
+  // Already sorted by name from getPatientsForPhysician helper
 
   res.status(200).json({
     success: true,

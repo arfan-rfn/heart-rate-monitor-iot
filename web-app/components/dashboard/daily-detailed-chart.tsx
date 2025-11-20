@@ -68,12 +68,16 @@ function QualityDot(props: any) {
   )
 }
 
-export function DailyDetailedChart() {
+interface DailyDetailedChartProps {
+  deviceId?: string
+}
+
+export function DailyDetailedChart({ deviceId }: DailyDetailedChartProps) {
   // Default to today
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const dateStr = format(selectedDate, 'yyyy-MM-dd')
 
-  const { data: dailyData, isLoading, error } = useDailyMeasurements(dateStr)
+  const { data: dailyData, isLoading, error } = useDailyMeasurements(dateStr, deviceId)
 
   const goToPreviousDay = () => {
     setSelectedDate((prev) => subDays(prev, 1))

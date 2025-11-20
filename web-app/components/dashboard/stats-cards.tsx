@@ -65,8 +65,12 @@ function StatCardSkeleton() {
   )
 }
 
-export function StatsCards() {
-  const { data: summary, isLoading, error } = useWeeklySummary()
+interface StatsCardsProps {
+  deviceId?: string
+}
+
+export function StatsCards({ deviceId }: StatsCardsProps) {
+  const { data: summary, isLoading, error } = useWeeklySummary(deviceId)
 
   if (isLoading) {
     return (
