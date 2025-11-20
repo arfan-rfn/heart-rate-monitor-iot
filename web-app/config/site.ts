@@ -6,20 +6,12 @@ export const siteConfig = {
     "PulseConnect is a platform that helps you track your heart rate and SpO2.",
   mainNav: [
     {
-      title: "Home",
-      href: "/",
-    },
-    {
       title: "Dashboard",
       href: "/dashboard",
     },
     {
       title: "Devices",
       href: "/devices",
-    },
-    {
-      title: "Blog",
-      href: "/blog",
     }
   ],
   links: {
