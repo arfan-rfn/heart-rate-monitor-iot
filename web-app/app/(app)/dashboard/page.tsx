@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
 import { useUser } from "@/hooks/use-user"
-import { useUserProfile } from "@/hooks/use-user-management"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { Icons } from "@/components/icons"
@@ -14,18 +13,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 export default function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { data: user, isLoading: userLoading } = useUser()
-  const { data: profile, isLoading: profileLoading } = useUserProfile()
   const router = useRouter()
 
   // Combined loading state
   const isLoading = authLoading || userLoading
-
-  // Show welcome modal for users with incomplete profiles
-  useEffect(() => {
-    if (user && !user.profileCompleted && isAuthenticated && !isLoading) {
-      router.push('/dashboard/welcome')
-    }
-  }, [user, isAuthenticated, isLoading, router])
 
   if (isLoading) {
     return <DashboardSkeleton />
@@ -49,10 +40,10 @@ export default function DashboardPage() {
 
             <div className="space-y-1">
               <h1 className="text-2xl font-semibold text-foreground">
-                {profile?.user.name || user?.name || 'User'}
+                {user?.name || 'User'}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {profile?.user.email || user?.email}
+                {user?.email}
               </p>
             </div>
 
@@ -88,10 +79,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {profileLoading ? (
+                {userLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  profile?.stats.deviceCount || 0
+                  user?.deviceCount || 0
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -118,10 +109,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {profileLoading ? (
+                {userLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  profile?.stats.recentMeasurementCount || 0
+                  user?.recentMeasurementCount || 0
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -215,7 +206,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Getting Started Guide (only show if no devices) */}
-        {!profileLoading && (profile?.stats.deviceCount === 0) && (
+        {!userLoading && (user?.deviceCount === 0) && (
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

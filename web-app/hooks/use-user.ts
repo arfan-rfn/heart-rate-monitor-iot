@@ -1,6 +1,7 @@
 /**
- * TanStack Query hook for fetching comprehensive user data from /user endpoint
+ * TanStack Query hook for fetching comprehensive user data from /users/profile endpoint
  * Provides longer cache validation and better user experience than session-based data
+ * Updated to use User Management API instead of Better Auth /user endpoint
  */
 
 import { useQuery } from '@tanstack/react-query'
@@ -11,14 +12,19 @@ import { useAuthContext } from '@/components/providers/auth-provider'
 export interface User {
   id: string
   email: string
-  name?: string
-  emailVerified: boolean
-  avatarUrl?: string | null // Full URL constructed by backend from fileId
+  name: string
+  role: 'user' | 'physician'
+  physicianId?: string | null
+  emailVerified?: boolean
+  avatarUrl?: string | null // Full URL constructed by backend from fileId (from Better Auth)
   profileCompleted?: boolean
   createdAt: string
   updatedAt: string
   firstLoginAt?: string
   profileCompletedAt?: string | null
+  // Stats from user management API
+  deviceCount?: number
+  recentMeasurementCount?: number
 }
 
 export interface UseUserOptions {
@@ -30,8 +36,8 @@ export interface UseUserOptions {
 
 /**
  * Fetch comprehensive user data with longer validation times
- * Uses 10 minutes stale time by default for better caching
- * @param options Configuration options for the query
+ * Uses 5 minutes stale time by default for better caching
+ * Now uses User Management API endpoint /users/profile
  */
 export function useUser() {
   // Get auth token from context instead of calling getSession
@@ -46,13 +52,21 @@ export function useUser() {
         throw new Error('No authentication token found')
       }
 
-      return apiClient.get<User>('/user', {
+      // Call User Management API to get profile with stats
+      const response = await apiClient.get<{ user: any; stats: any }>('/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       })
+
+      // Merge user data with stats
+      return {
+        ...response.user,
+        deviceCount: response.stats.deviceCount,
+        recentMeasurementCount: response.stats.recentMeasurementCount,
+      }
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes default for good caching
+    staleTime: 5 * 60 * 1000, // 5 minutes for user profile data
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     retry: (failureCount, error) => {
