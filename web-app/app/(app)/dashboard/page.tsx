@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
             <div className="flex gap-3 justify-center">
               <Button
-                onClick={() => router.push('/dashboard/edit')}
+                onClick={() => router.push('/settings/profile')}
                 className="flex-1 max-w-[150px]"
               >
                 <Icons.Edit className="w-4 h-4 mr-2" />

@@ -40,24 +40,18 @@ export interface UseUserOptions {
  * Now uses User Management API endpoint /users/profile
  */
 export function useUser() {
-  // Get auth token from context instead of calling getSession
-  const { getAuthToken, isAuthenticated } = useAuthContext()
+  const { isAuthenticated } = useAuthContext()
 
   return useQuery({
     queryKey: ['user'],
     queryFn: async (): Promise<User> => {
-      // Get authentication token from cached context
-      const token = getAuthToken()
-      if (!token) {
-        throw new Error('No authentication token found')
+      if (!isAuthenticated) {
+        throw new Error('Authentication required')
       }
 
       // Call User Management API to get profile with stats
-      const response = await apiClient.get<{ user: any; stats: any }>('/users/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
+      // Session cookie is automatically included via credentials: 'include' in apiClient
+      const response = await apiClient.get<{ user: any; stats: any }>('/users/profile')
 
       // Merge user data with stats
       return {

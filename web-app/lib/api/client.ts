@@ -18,24 +18,40 @@ class APIError extends Error {
 
 interface APIResponse<T> {
   data: T
-  status: number
+  status?: number
   success: boolean
+  message?: string
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const errorMessage = `API Error: ${response.status} ${response.statusText}`
-    throw new APIError(errorMessage, response.status, response)
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const errorData = await response.json()
+        const errorMessage = errorData?.error?.message || errorData?.message || `API Error: ${response.status} ${response.statusText}`
+        throw new APIError(errorMessage, response.status, response)
+      } catch (error) {
+        if (error instanceof APIError) throw error
+        throw new APIError(`API Error: ${response.status} ${response.statusText}`, response.status, response)
+      }
+    }
+    throw new APIError(`API Error: ${response.status} ${response.statusText}`, response.status, response)
   }
 
   const contentType = response.headers.get('content-type')
   if (contentType && contentType.includes('application/json')) {
     const jsonText = await response.text()
     try {
-      const parsed = JSON.parse(jsonText) as APIResponse<T>
-      // Extract and return only the data field
-      if (parsed && typeof parsed === 'object' && 'data' in parsed) {
-        return parsed.data
+      const parsed = JSON.parse(jsonText) as APIResponse<any>
+      // Handle the API response structure
+      if (parsed && typeof parsed === 'object' && 'data' in parsed && 'success' in parsed) {
+        // If there's a message field at the top level, merge it with the data
+        if ('message' in parsed && parsed.message) {
+          return { ...parsed.data, message: parsed.message } as T
+        }
+        // Otherwise, just return the data
+        return parsed.data as T
       }
       // Fallback for responses that don't follow the standard structure
       return parsed as T

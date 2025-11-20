@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth, User } from '../config/auth.js';
+import { auth, User } from '../../config/auth.js';
 
 /**
  * Extend Express Request to include user

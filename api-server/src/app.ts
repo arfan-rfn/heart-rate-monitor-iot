@@ -6,10 +6,10 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { auth } from './config/auth.js';
 import { toNodeHandler } from 'better-auth/node';
-import deviceRoutes from './routes/device.routes.js';
-import measurementRoutes from './routes/measurement.routes.js';
-import userRoutes from './routes/user.routes.js';
-import { errorHandler, notFound } from './middleware/error.middleware.js';
+import { userRoutes } from './routes/users/index.js';
+import { deviceRoutes } from './routes/devices/index.js';
+import { measurementRoutes } from './routes/measurements/index.js';
+import { errorHandler, notFound } from './middleware/error/index.js';
 
 /**
  * Create and configure Express application

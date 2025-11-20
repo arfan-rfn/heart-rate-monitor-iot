@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { asyncHandler, AppError } from '../middleware/error.middleware.js';
-import { Device } from '../models/Device.js';
-import { Measurement } from '../models/Measurement.js';
-import { getMongoDbInstance } from '../config/database.js';
+import { asyncHandler, AppError } from '../../middleware/error/index.js';
+import { Device } from '../../models/devices/index.js';
+import { Measurement } from '../../models/measurements/index.js';
+import { getMongoDbInstance } from '../../config/database.js';
 import bcrypt from 'bcrypt';
 
 /**
@@ -90,10 +90,30 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
   try {
     const db = getMongoDbInstance();
     const userCollection = db.collection('user');
+    const { ObjectId } = await import('mongodb');
 
-    // Better-Auth uses 'id' field (string), not '_id'
-    const updateResult = await userCollection.findOneAndUpdate(
-      { id: userId },
+    // Try to find user by 'id' field first (Better Auth v2 format)
+    let query: any = { id: userId };
+    let existingUser = await userCollection.findOne(query);
+
+    // If not found, try by _id (legacy format or ObjectId)
+    if (!existingUser) {
+      try {
+        query = { _id: new ObjectId(userId) };
+        existingUser = await userCollection.findOne(query);
+      } catch (e) {
+        // Invalid ObjectId format
+        throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+      }
+    }
+
+    if (!existingUser) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+
+    // Update using the same query that found the user
+    const result = await userCollection.findOneAndUpdate(
+      query,
       {
         $set: {
           name: name.trim(),
@@ -103,22 +123,18 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
       { returnDocument: 'after' }
     );
 
-    console.log('Update result:', updateResult);
+    // Extract the updated document
+    const updateResult = result?.value || result;
 
-    // findOneAndUpdate returns null if not found
     if (!updateResult) {
-      console.error('User not found for ID:', userId);
-      // Let's check if user exists
-      const existingUser = await userCollection.findOne({ id: userId });
-      console.log('Existing user check:', existingUser);
-      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+      throw new AppError('Failed to update user', 500, 'UPDATE_FAILED');
     }
 
     res.status(200).json({
       success: true,
       data: {
         user: {
-          id: updateResult.id,
+          id: updateResult.id || updateResult._id?.toString(),
           email: updateResult.email,
           name: updateResult.name,
           role: updateResult.role || 'user',
@@ -345,9 +361,28 @@ export const updatePhysicianAssociation = asyncHandler(async (req: Request, res:
   try {
     const db = getMongoDbInstance();
     const userCollection = db.collection('user');
+    const { ObjectId } = await import('mongodb');
 
-    const updateResult = await userCollection.findOneAndUpdate(
-      { id: userId },
+    // Try to find user by 'id' field first (Better Auth v2 format)
+    let query: any = { id: userId };
+    let existingUser = await userCollection.findOne(query);
+
+    // If not found, try by _id (legacy format or ObjectId)
+    if (!existingUser) {
+      try {
+        query = { _id: new ObjectId(userId) };
+        existingUser = await userCollection.findOne(query);
+      } catch (e) {
+        throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+      }
+    }
+
+    if (!existingUser) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+
+    const result = await userCollection.findOneAndUpdate(
+      query,
       {
         $set: {
           physicianId: physicianId || null,
@@ -357,16 +392,18 @@ export const updatePhysicianAssociation = asyncHandler(async (req: Request, res:
       { returnDocument: 'after' }
     );
 
+    // findOneAndUpdate returns { value: document } or { value: null }
+    const updateResult = result?.value || result;
+
     if (!updateResult) {
-      console.error('User not found for ID:', userId);
-      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+      throw new AppError('Failed to update physician association', 500, 'UPDATE_FAILED');
     }
 
     res.status(200).json({
       success: true,
       data: {
         user: {
-          id: updateResult.id,
+          id: updateResult.id || updateResult._id?.toString(),
           email: updateResult.email,
           name: updateResult.name,
           role: updateResult.role || 'user',

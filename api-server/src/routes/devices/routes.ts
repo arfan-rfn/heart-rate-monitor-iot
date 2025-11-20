@@ -7,9 +7,9 @@ import {
   updateDeviceConfig,
   updateDevice,
   deleteDevice,
-} from '../controllers/device.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { authenticateApiKey, validateDeviceOwnership } from '../middleware/apiKey.middleware.js';
+} from './controller.js';
+import { authenticate } from '../../middleware/auth/index.js';
+import { authenticateApiKey, validateDeviceOwnership } from '../../middleware/device/index.js';
 
 const router = Router();
 

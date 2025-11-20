@@ -30,21 +30,17 @@ export const userManagementKeys = {
  * Fetch user profile with statistics
  */
 export function useUserProfile() {
-  const { getAuthToken, isAuthenticated } = useAuthContext()
+  const { isAuthenticated } = useAuthContext()
 
   return useQuery({
     queryKey: userManagementKeys.profile(),
     queryFn: async (): Promise<GetProfileResponse> => {
-      const token = getAuthToken()
-      if (!token) {
-        throw new Error('No authentication token found')
+      if (!isAuthenticated) {
+        throw new Error('Authentication required')
       }
 
-      return apiClient.get<GetProfileResponse>('/users/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      // Session cookie is automatically included via credentials: 'include' in apiClient
+      return apiClient.get<GetProfileResponse>('/users/profile')
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
@@ -65,27 +61,25 @@ export function useUserProfile() {
  */
 export function useUpdateUserProfile() {
   const queryClient = useQueryClient()
-  const { getAuthToken } = useAuthContext()
+  const { isAuthenticated } = useAuthContext()
 
   return useMutation({
     mutationFn: async (data: UpdateProfileRequest): Promise<UpdateProfileResponse> => {
-      const token = getAuthToken()
-      if (!token) {
-        throw new Error('No authentication token found')
+      if (!isAuthenticated) {
+        throw new Error('Authentication required')
       }
 
-      return apiClient.put<UpdateProfileResponse>('/users/profile', data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      // Session cookie is automatically included via credentials: 'include' in apiClient
+      return apiClient.put<UpdateProfileResponse>('/users/profile', data)
     },
     onSuccess: (data) => {
       toast.success(data.message || 'Profile updated successfully')
-      // Invalidate profile query to refetch updated data
-      queryClient.invalidateQueries({ queryKey: userManagementKeys.profile() })
-      // Also invalidate the user query if it exists
-      queryClient.invalidateQueries({ queryKey: ['user'] })
+
+      // Invalidate ALL user-related queries to ensure UI updates everywhere
+      queryClient.invalidateQueries({ queryKey: userManagementKeys.profile() }) // ['user-management', 'profile']
+      queryClient.invalidateQueries({ queryKey: ['user'] }) // useUser hook
+      queryClient.invalidateQueries({ queryKey: ['auth', 'session'] }) // Better Auth session
+      queryClient.invalidateQueries({ queryKey: userManagementKeys.all }) // All user management queries
     },
     onError: (error) => {
       const message =
@@ -138,21 +132,17 @@ export function useChangePassword() {
  */
 export function useDeleteUserAccount() {
   const queryClient = useQueryClient()
-  const { getAuthToken } = useAuthContext()
+  const { isAuthenticated } = useAuthContext()
   const router = useRouter()
 
   return useMutation({
     mutationFn: async (data: DeleteAccountRequest): Promise<DeleteAccountResponse> => {
-      const token = getAuthToken()
-      if (!token) {
-        throw new Error('No authentication token found')
+      if (!isAuthenticated) {
+        throw new Error('Authentication required')
       }
 
-      return apiClient.delete<DeleteAccountResponse>('/users/profile', data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      // Session cookie is automatically included via credentials: 'include' in apiClient
+      return apiClient.delete<DeleteAccountResponse>('/users/profile', data)
     },
     onSuccess: (data) => {
       toast.success(
@@ -182,20 +172,16 @@ export function useDeleteUserAccount() {
  */
 export function useUpdatePhysician() {
   const queryClient = useQueryClient()
-  const { getAuthToken } = useAuthContext()
+  const { isAuthenticated } = useAuthContext()
 
   return useMutation({
     mutationFn: async (data: UpdatePhysicianRequest): Promise<UpdatePhysicianResponse> => {
-      const token = getAuthToken()
-      if (!token) {
-        throw new Error('No authentication token found')
+      if (!isAuthenticated) {
+        throw new Error('Authentication required')
       }
 
-      return apiClient.put<UpdatePhysicianResponse>('/users/physician', data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      // Session cookie is automatically included via credentials: 'include' in apiClient
+      return apiClient.put<UpdatePhysicianResponse>('/users/physician', data)
     },
     onSuccess: (data) => {
       const message = data.user.physicianId

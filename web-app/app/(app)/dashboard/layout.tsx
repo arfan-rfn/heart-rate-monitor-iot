@@ -8,13 +8,11 @@ import { ProfileSkeleton } from "@/components/ui/skeletons"
 
 interface DashboardLayoutProps {
   children: ReactNode
-  profileModal: ReactNode
   welcomeModal: ReactNode
 }
 
 export default function DashboardLayout({
   children,
-  profileModal,
   welcomeModal,
 }: DashboardLayoutProps) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -39,7 +37,6 @@ export default function DashboardLayout({
   return (
     <div>
       {children}
-      {profileModal}
       {welcomeModal}
     </div>
   )

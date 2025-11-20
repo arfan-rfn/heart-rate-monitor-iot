@@ -6,9 +6,9 @@ import {
   getWeeklySummary,
   getDailyAggregates,
   getDeviceMeasurements,
-} from '../controllers/measurement.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { authenticateApiKey } from '../middleware/apiKey.middleware.js';
+} from './controller.js';
+import { authenticate } from '../../middleware/auth/index.js';
+import { authenticateApiKey } from '../../middleware/device/index.js';
 
 const router = Router();
 

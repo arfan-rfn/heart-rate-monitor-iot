@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../config/auth.js';
-import { Device } from '../models/Device.js';
+import { auth } from '../../config/auth.js';
+import { Device } from '../../models/devices/index.js';
 
 /**
  * Extend Express Request to include device

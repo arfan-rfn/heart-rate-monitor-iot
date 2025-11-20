@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Measurement, IMeasurement } from '../models/Measurement.js';
-import { Device } from '../models/Device.js';
-import { asyncHandler, AppError } from '../middleware/error.middleware.js';
+import { Measurement, IMeasurement } from '../../models/measurements/index.js';
+import { Device } from '../../models/devices/index.js';
+import { asyncHandler, AppError } from '../../middleware/error/index.js';
 
 /**
  * Submit a measurement from IoT device

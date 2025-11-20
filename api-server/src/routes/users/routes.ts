@@ -5,8 +5,8 @@ import {
   changePassword,
   deleteAccount,
   updatePhysicianAssociation,
-} from '../controllers/user.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+} from './controller.js';
+import { authenticate } from '../../middleware/auth/index.js';
 
 const router = Router();
 

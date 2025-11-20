@@ -1,5 +1,5 @@
 /**
  * Export all models
  */
-export { Device, DeviceStatus, IDevice, IDeviceConfig } from './Device.js';
-export { Measurement, MeasurementQuality, IMeasurement } from './Measurement.js';
+export * from './devices/index.js';
+export * from './measurements/index.js';

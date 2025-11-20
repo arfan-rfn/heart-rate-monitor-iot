@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Device } from '../models/Device.js';
-import { auth } from '../config/auth.js';
-import { asyncHandler, AppError } from '../middleware/error.middleware.js';
+import { Device } from '../../models/devices/index.js';
+import { auth } from '../../config/auth.js';
+import { asyncHandler, AppError } from '../../middleware/error/index.js';
 
 /**
  * Register a new device
