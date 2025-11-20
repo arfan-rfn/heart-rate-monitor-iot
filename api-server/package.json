@@ -12,7 +12,8 @@
     "migrate": "better-auth migrate",
     "lint": "tsc --noEmit",
     "generate-openapi": "tsx scripts/generate-openapi.ts",
-    "generate-client": "npm run generate-openapi && openapi-typescript ./openapi.json -o ../web-app/src/api/generated/api-types.ts && tsx scripts/generate-client-wrapper.ts"
+    "generate-client": "npm run generate-openapi && openapi-typescript ./openapi.json -o ../web-app/src/api/generated/api-types.ts && tsx scripts/generate-client-wrapper.ts",
+    "set-physician": "tsx scripts/set-physician-role.ts"
   },
   "keywords": [
     "authentication",
@@ -31,7 +32,6 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "mongoose": "^8.19.2",
     "morgan": "^1.10.1",

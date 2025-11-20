@@ -1,18 +1,31 @@
 "use client"
 
+/**
+ * Dashboard Page
+ * Main dashboard with heart rate monitoring visualizations and real-time updates
+ */
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/hooks/use-auth"
 import { useUser } from "@/hooks/use-user"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import { Icons } from "@/components/icons"
 import { Skeleton } from "@/components/ui/skeleton"
+import { StatsCards } from "@/components/dashboard/stats-cards"
+import { WeeklyTrendsChart } from "@/components/dashboard/weekly-trends-chart"
+import { DailyDetailedChart } from "@/components/dashboard/daily-detailed-chart"
+import { ExportModal } from "@/components/dashboard/export-modal"
+import { RefreshCw } from "lucide-react"
+import { useWeeklySummary } from "@/hooks/use-measurements"
+import { format } from "date-fns"
 
 export default function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { data: user, isLoading: userLoading } = useUser()
+  const { data: summary, isLoading: summaryLoading, refetch, dataUpdatedAt } = useWeeklySummary()
   const router = useRouter()
 
   // Combined loading state
@@ -23,187 +36,51 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen p-4">
-      <div className="w-full max-w-4xl mx-auto space-y-8">
-        {/* Centered Profile Section */}
-        <div className="pt-12 sm:pt-20">
-          <div className="text-center space-y-6">
-            <Avatar className="size-24 mx-auto">
+    <div className="min-h-screen p-4 pb-20">
+      <div className="w-full max-w-7xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="size-16">
               <AvatarImage
                 src={user?.avatarUrl || undefined}
                 alt={user?.name || user?.email}
               />
               <AvatarFallback className="bg-muted" delayMs={50}>
-                <Icons.User className="w-10 h-10 text-muted-foreground" />
+                <Icons.User className="w-8 h-8 text-muted-foreground" />
               </AvatarFallback>
             </Avatar>
 
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold text-foreground">
-                {user?.name || 'User'}
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Welcome back, {user?.name?.split(' ')[0] || 'User'}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {user?.email}
+                Health Monitoring Dashboard
               </p>
             </div>
+          </div>
 
-            <div className="flex gap-3 justify-center">
-              <Button
-                onClick={() => router.push('/settings/profile')}
-                className="flex-1 max-w-[150px]"
-              >
-                <Icons.Edit className="w-4 h-4 mr-2" />
-                Edit Profile
-              </Button>
-              <Button
-                onClick={() => router.push('/settings')}
-                variant="outline"
-                className="flex-1 max-w-[150px]"
-              >
-                <Icons.Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-            </div>
+          <div className="flex items-center gap-2">
+            {dataUpdatedAt && (
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                Updated {format(dataUpdatedAt, 'h:mm a')}
+              </span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <ExportModal />
           </div>
         </div>
 
-        {/* Health Metrics Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Devices Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Registered Devices
-              </CardTitle>
-              <Icons.Smartphone className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {userLoading ? (
-                  <Skeleton className="h-8 w-12" />
-                ) : (
-                  user?.deviceCount || 0
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Active monitoring devices
-              </p>
-              <Button
-                variant="link"
-                className="px-0 mt-2 h-auto text-xs"
-                onClick={() => router.push('/devices')}
-              >
-                Manage devices
-                <Icons.ChevronRight className="size-3 ml-1" />
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Recent Measurements Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Recent Measurements
-              </CardTitle>
-              <Icons.Heart className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {userLoading ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  user?.recentMeasurementCount || 0
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Last 7 days
-              </p>
-              <Button
-                variant="link"
-                className="px-0 mt-2 h-auto text-xs"
-                onClick={() => router.push('/measurements')}
-              >
-                View history
-                <Icons.ChevronRight className="size-3 ml-1" />
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Health Status Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Health Status
-              </CardTitle>
-              <Icons.BarChart className="size-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                Good
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                All metrics within normal range
-              </p>
-              <Button
-                variant="link"
-                className="px-0 mt-2 h-auto text-xs"
-                onClick={() => router.push('/analytics')}
-              >
-                View analytics
-                <Icons.ChevronRight className="size-3 ml-1" />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icons.Settings className="size-5" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>
-              Common tasks and shortcuts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Button
-                variant="outline"
-                className="justify-start h-auto py-3"
-                onClick={() => router.push('/settings/profile')}
-              >
-                <Icons.User className="size-4 mr-2" />
-                <span>Update Profile</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="justify-start h-auto py-3"
-                onClick={() => router.push('/settings/security')}
-              >
-                <Icons.Lock className="size-4 mr-2" />
-                <span>Change Password</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="justify-start h-auto py-3"
-                onClick={() => router.push('/devices')}
-              >
-                <Icons.Smartphone className="size-4 mr-2" />
-                <span>Add Device</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="justify-start h-auto py-3"
-                onClick={() => router.push('/measurements')}
-              >
-                <Icons.Heart className="size-4 mr-2" />
-                <span>View Measurements</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Real-time Stats Cards */}
+        <StatsCards />
 
         {/* Getting Started Guide (only show if no devices) */}
         {!userLoading && (user?.deviceCount === 0) && (
@@ -229,7 +106,7 @@ export default function DashboardPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-semibold text-primary shrink-0">3.</span>
-                  <span>Start receiving real-time health data</span>
+                  <span>Start receiving real-time health data and view your trends</span>
                 </li>
               </ol>
               <Button onClick={() => router.push('/devices')}>
@@ -239,6 +116,64 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Weekly Trends Chart */}
+        <div id="weekly-trends-chart">
+          <WeeklyTrendsChart />
+        </div>
+
+        {/* Daily Detailed Chart */}
+        <div id="daily-detailed-chart">
+          <DailyDetailedChart />
+        </div>
+
+        {/* Device Management Quick Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Icons.Smartphone className="size-5" />
+                  Your Devices
+                </CardTitle>
+                <CardDescription>
+                  Manage your monitoring devices
+                </CardDescription>
+              </div>
+              <Badge variant="secondary">
+                {user?.deviceCount || 0} {user?.deviceCount === 1 ? 'device' : 'devices'}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => router.push('/devices')}
+              >
+                <Icons.Smartphone className="size-4 mr-2" />
+                Manage Devices
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => router.push('/settings')}
+              >
+                <Icons.Settings className="size-4 mr-2" />
+                Settings
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Auto-refresh notice */}
+        <div className="text-center text-xs text-muted-foreground pb-4">
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span>Dashboard auto-refreshes every 60 seconds</span>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -247,26 +182,33 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <div className="min-h-screen p-4">
-      <div className="w-full max-w-4xl mx-auto space-y-8">
-        <div className="pt-12 sm:pt-20">
-          <div className="text-center space-y-8">
-            <Skeleton className="size-24 rounded-full mx-auto" />
-            <div className="space-y-2 flex flex-col items-center">
+      <div className="w-full max-w-7xl mx-auto space-y-8">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton className="size-16 rounded-full" />
+            <div className="space-y-2">
               <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-5 w-64" />
-            </div>
-            <div className="flex gap-3 justify-center">
-              <Skeleton className="h-10 w-[150px]" />
-              <Skeleton className="h-10 w-[150px]" />
+              <Skeleton className="h-4 w-64" />
             </div>
           </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-32" />
           <Skeleton className="h-32" />
           <Skeleton className="h-32" />
           <Skeleton className="h-32" />
         </div>
-        <Skeleton className="h-48" />
+
+        {/* Charts Skeleton */}
+        <Skeleton className="h-[400px]" />
+        <Skeleton className="h-[500px]" />
       </div>
     </div>
   )

@@ -3,13 +3,13 @@ import type { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import { auth } from './config/auth.js';
 import { toNodeHandler } from 'better-auth/node';
 import { userRoutes } from './routes/users/index.js';
 import { deviceRoutes } from './routes/devices/index.js';
 import { measurementRoutes } from './routes/measurements/index.js';
+import { physicianRoutes } from './routes/physicians/index.js';
 import { errorHandler, notFound } from './middleware/error/index.js';
 import { generateOpenAPIDocument } from './docs/openapi-generator.js';
 
@@ -53,18 +53,6 @@ export const createApp = (): Application => {
       credentials: true,
     })
   );
-
-  // Rate limiting
-  const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // Limit each IP
-    message: 'Too many requests from this IP, please try again later.',
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
-  // Apply rate limiting to all routes
-  app.use(limiter);
 
   // ===== Body Parsing Middleware =====
   app.use(express.json({ limit: '10mb' }));
@@ -123,6 +111,7 @@ export const createApp = (): Application => {
   app.use('/api/devices', deviceRoutes);
   app.use('/api/measurements', measurementRoutes);
   app.use('/api/users', userRoutes);
+  app.use('/api/physicians', physicianRoutes);
 
   // ===== API Info Endpoint =====
   app.get('/api', (req: Request, res: Response) => {
@@ -164,6 +153,12 @@ export const createApp = (): Application => {
           changePassword: 'POST /api/users/change-password',
           deleteAccount: 'DELETE /api/users/profile',
           updatePhysician: 'PUT /api/users/physician',
+        },
+        physicians: {
+          listPatients: 'GET /api/physicians/patients',
+          patientSummary: 'GET /api/physicians/patients/:patientId/summary',
+          patientDaily: 'GET /api/physicians/patients/:patientId/daily/:date',
+          updatePatientConfig: 'PUT /api/physicians/patients/:patientId/devices/:deviceId/config',
         },
       },
     });

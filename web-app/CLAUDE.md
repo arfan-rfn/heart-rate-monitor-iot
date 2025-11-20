@@ -52,7 +52,6 @@ This is the **web frontend** for a Heart Rate Monitor IoT system (ECE 513 course
 │   │   ├── dashboard/           # User dashboard with health metrics
 │   │   ├── admin/               # Admin panel (users, sessions)
 │   │   ├── settings/            # User settings (account, appearance)
-│   │   ├── blog/                # Blog section
 │   │   └── test/                # Test utilities
 │   ├── api/                     # Next.js API routes (minimal - most API calls go to external backend)
 │   ├── layout.tsx               # Root layout with providers

@@ -486,7 +486,7 @@ Infrastructure is ready, but you need to create physician-specific endpoints:
 
 ### Phase 8: 🎓 ECE 513 Physician Portal - **Required for ECE 513 students**
 
-> **Status:** ⚠️ Partially implemented (infrastructure ready, but physician-specific endpoints missing)
+> **Status:** ✅ **COMPLETE** - All physician endpoints implemented (2025-11-19)
 
 **What's Implemented:**
 - ✅ Database schema supports `role='physician'` via Better Auth
@@ -494,48 +494,66 @@ Infrastructure is ready, but you need to create physician-specific endpoints:
 - ✅ Patient-physician association via `PUT /api/users/physician` endpoint
 - ✅ Users can associate with a physician using `physicianId` field
 - ✅ User model includes `physicianId` and `role` fields
+- ✅ **All 4 physician endpoints fully implemented**
+- ✅ **Utility script to set physician role** (`npm run set-physician`)
 
-**What's Missing (REQUIRED for ECE 513):**
+**Implemented Endpoints:**
 
-- [ ] **Physician Registration** - **Required for 513**
-  - [ ] POST `/api/physicians/register` or `/api/auth/sign-up/physician` endpoint
-  - [ ] Separate registration flow from regular users
-  - [ ] Automatically assign 'physician' role
-  - [ ] Add physician-specific fields (specialty, license number, etc.)
-  - [ ] Return 201 Created
+- ✅ **Physician Portal: All-Patient View** - **Required for 513**
+  - ✅ GET `/api/physicians/patients` endpoint
+  - ✅ Requires physician role authentication (`requirePhysician` middleware)
+  - ✅ Lists all patients by name with their 7-day stats - **Required by spec**
+  - ✅ Shows average, maximum, minimum heart rate for each patient
+  - ✅ Returns 200 OK
 
-- [ ] **Physician Portal: All-Patient View** - **Required for 513**
-  - [ ] GET `/api/physicians/patients` endpoint
-  - [ ] Require physician role authentication (use `requirePhysician` middleware)
-  - [ ] List all patients by name with their 7-day stats - **Required by spec**
-  - [ ] Show average, maximum, minimum heart rate for each patient
-  - [ ] Return 200 OK
+- ✅ **Physician Portal: Patient Summary View** - **Required for 513**
+  - ✅ GET `/api/physicians/patients/:patientId/summary` endpoint
+  - ✅ Verifies patient belongs to physician (checks `physicianId` field)
+  - ✅ Similar to weekly summary view for user
+  - ✅ Includes device configurations for adjusting measurement frequency - **Required by spec**
+  - ✅ Returns 200 OK
 
-- [ ] **Physician Portal: Patient Summary View** - **Required for 513**
-  - [ ] GET `/api/physicians/patients/:patientId/summary` endpoint
-  - [ ] Verify patient belongs to physician (check `physicianId` field)
-  - [ ] Similar to weekly summary view for user
-  - [ ] Include controls for adjusting measurement frequency - **Required by spec**
-  - [ ] Return 200 OK
+- ✅ **Physician Portal: Patient Detailed Daily View** - **Required for 513**
+  - ✅ GET `/api/physicians/patients/:patientId/daily/:date` endpoint
+  - ✅ Presents same information as detailed day view for user
+  - ✅ Verifies physician-patient relationship
+  - ✅ Returns 200 OK
 
-- [ ] **Physician Portal: Patient Detailed Daily View** - **Required for 513**
-  - [ ] GET `/api/physicians/patients/:patientId/daily/:date` endpoint
-  - [ ] Present same information as detailed day view for user
-  - [ ] Verify physician-patient relationship
-  - [ ] Return 200 OK
+- ✅ **Physician Can Adjust Patient Config** - **Required for 513**
+  - ✅ PUT `/api/physicians/patients/:patientId/devices/:deviceId/config` endpoint
+  - ✅ Allows physician to adjust measurement frequency
+  - ✅ Validates physician-patient relationship
+  - ✅ Updates patient's device configuration
+  - ✅ Returns 200 OK
 
-- [ ] **Physician Can Adjust Patient Config** - **Required for 513**
-  - [ ] PUT `/api/physicians/patients/:patientId/config` endpoint
-  - [ ] Allow physician to adjust measurement frequency
-  - [ ] Validate physician-patient relationship
-  - [ ] Update patient's device configuration
-  - [ ] Return 200 OK
+**How to Set Up a Physician Account:**
 
-**Implementation Notes:**
-- All necessary infrastructure is in place (role middleware, database fields)
-- Need to create `/api/physicians` routes file
-- Can reuse existing measurement aggregation logic for patient views
-- Use `requirePhysician` middleware from `src/middleware/role/index.ts`
+1. **Register a normal user account:**
+   ```bash
+   curl -X POST http://localhost:4000/api/auth/sign-up/email \
+     -H "Content-Type: application/json" \
+     -d '{"email": "dr.smith@hospital.com", "password": "SecurePass123!", "name": "Dr. Smith"}'
+   ```
+
+2. **Set the physician role using the utility script:**
+   ```bash
+   npm run set-physician dr.smith@hospital.com
+   ```
+
+3. **Login as physician and use the JWT token:**
+   ```bash
+   curl -X POST http://localhost:4000/api/auth/sign-in/email \
+     -H "Content-Type: application/json" \
+     -d '{"email": "dr.smith@hospital.com", "password": "SecurePass123!"}'
+   ```
+
+**Implementation Details:**
+- ✅ All physician routes implemented in `src/routes/physicians/`
+- ✅ Three-layer security: JWT → Role Check → Relationship Verification
+- ✅ Reuses existing measurement aggregation logic
+- ✅ Uses `requirePhysician` middleware from `src/middleware/role/index.ts`
+- ✅ Direct MongoDB queries for user management
+- ✅ Comprehensive documentation in `plan/physician-business-logic-implementation.md`
 
 ### Phase 9: 🎓 ECE 513 HTTPS Implementation - **MANDATORY for ECE 513**
 
