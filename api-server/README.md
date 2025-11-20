@@ -18,16 +18,17 @@ All 13 mandatory core requirements are fully implemented and functional:
 - ✅ Weekly summary and daily detail views
 - ✅ Configurable time ranges and measurement frequency
 
-### ⚠️ ECE 513 Additional Requirements: PARTIAL (50%)
+### ⚠️ ECE 513 Additional Requirements: PARTIAL (67%)
 **Graduate students must complete the following:**
 - ❌ **HTTPS Implementation (3 points)** - NOT STARTED
   - Server currently runs HTTP only on port 3000/4000
   - Need SSL certificates and HTTPS configuration
-- ⚠️ **Physician Portal** - INFRASTRUCTURE READY, ENDPOINTS MISSING
+- ✅ **Physician Portal (COMPLETE)** - ALL ENDPOINTS IMPLEMENTED
   - ✅ Database supports physician role and patient associations
   - ✅ Role-based middleware implemented
-  - ❌ Missing dedicated physician endpoints (0 of 4 implemented)
-  - ❌ Missing physician registration endpoint
+  - ✅ All 4 core physician endpoints implemented (100%)
+  - ✅ Additional 3 analytics endpoints for comprehensive patient monitoring
+  - ✅ Utility script for physician role management
 
 ### ❌ Extra Credit: NOT IMPLEMENTED (0%)
 - ❌ AI Health Assistant with RAG (+5 points)
@@ -147,7 +148,7 @@ Infrastructure is ready, but you need to create physician-specific endpoints:
 
 ### ECE 513 Additional Requirements - **MANDATORY for graduate students**
 14. ❌ **HTTPS:** Server must use HTTPS with SSL certificates - **MANDATORY for 513** (NOT implemented - HTTP only)
-15. ⚠️ **Physician Portal:** Separate registration, patient management - **MANDATORY for 513** (Partially implemented - see details below)
+15. ✅ **Physician Portal:** Separate registration, patient management - **MANDATORY for 513** (FULLY implemented - see details below)
 
 ### Extra Credit Opportunities
 16. ❌ **AI Health Assistant:** RAG with local LLM (+5 points) - **Optional** (NOT implemented)
@@ -167,7 +168,8 @@ Infrastructure is ready, but you need to create physician-specific endpoints:
 - [ ] **#17: Store data in device (ECE413: 3pts, ECE513: 2pts)** - N/A for API server (IoT device feature)
 - [x] **#19: Localhost running (1 pt)** - ✅ Evidence of code running locally on port 3000/4000
 - [ ] **#20: HTTPS implementation (ECE513: 3pts)** - ❌ **MANDATORY for 513** - NOT implemented (HTTP only)
-- [x] **#21: Project Documentation (5 pts)** - ✅ Comprehensive docs in /docs directory
+- [x] **#21: Project Documentation (5 pts)** - ✅ Comprehensive docs in /docs and /plan directories
+- [x] **#24: Physician Portal (ECE513)** - ✅ **COMPLETE** - All 4 required endpoints + 3 analytics endpoints
 - [ ] **#22: Extra Credit LLM Assistant (5 pts)** - ❌ NOT implemented
 - [ ] **#23: Extra credit Milestone (3 pts)** - ❌ Deadline passed (Nov 21)
 
@@ -486,7 +488,7 @@ Infrastructure is ready, but you need to create physician-specific endpoints:
 
 ### Phase 8: 🎓 ECE 513 Physician Portal - **Required for ECE 513 students**
 
-> **Status:** ✅ **COMPLETE** - All physician endpoints implemented (2025-11-19)
+> **Status:** ✅ **COMPLETE** - All physician endpoints implemented (2025-11-20)
 
 **What's Implemented:**
 - ✅ Database schema supports `role='physician'` via Better Auth
@@ -494,37 +496,63 @@ Infrastructure is ready, but you need to create physician-specific endpoints:
 - ✅ Patient-physician association via `PUT /api/users/physician` endpoint
 - ✅ Users can associate with a physician using `physicianId` field
 - ✅ User model includes `physicianId` and `role` fields
-- ✅ **All 4 physician endpoints fully implemented**
+- ✅ **All 4 core physician endpoints fully implemented**
+- ✅ **3 additional analytics endpoints for comprehensive monitoring**
 - ✅ **Utility script to set physician role** (`npm run set-physician`)
+- ✅ **MongoDB ObjectId support for user lookups**
 
-**Implemented Endpoints:**
+**Core Physician Endpoints (ECE 513 Required):**
 
 - ✅ **Physician Portal: All-Patient View** - **Required for 513**
   - ✅ GET `/api/physicians/patients` endpoint
   - ✅ Requires physician role authentication (`requirePhysician` middleware)
   - ✅ Lists all patients by name with their 7-day stats - **Required by spec**
   - ✅ Shows average, maximum, minimum heart rate for each patient
+  - ✅ Includes high-level overview stats (total measurements, devices, monitoring status)
+  - ✅ Returns patient ID for subsequent API calls
   - ✅ Returns 200 OK
 
 - ✅ **Physician Portal: Patient Summary View** - **Required for 513**
   - ✅ GET `/api/physicians/patients/:patientId/summary` endpoint
-  - ✅ Verifies patient belongs to physician (checks `physicianId` field)
+  - ✅ Physicians can access ALL patients (not restricted by association)
   - ✅ Similar to weekly summary view for user
   - ✅ Includes device configurations for adjusting measurement frequency - **Required by spec**
+  - ✅ Returns SpO2 stats in addition to heart rate
   - ✅ Returns 200 OK
 
 - ✅ **Physician Portal: Patient Detailed Daily View** - **Required for 513**
   - ✅ GET `/api/physicians/patients/:patientId/daily/:date` endpoint
   - ✅ Presents same information as detailed day view for user
-  - ✅ Verifies physician-patient relationship
+  - ✅ Shows all measurements for specific date
   - ✅ Returns 200 OK
 
 - ✅ **Physician Can Adjust Patient Config** - **Required for 513**
   - ✅ PUT `/api/physicians/patients/:patientId/devices/:deviceId/config` endpoint
   - ✅ Allows physician to adjust measurement frequency
-  - ✅ Validates physician-patient relationship
+  - ✅ Can modify active time ranges (start/end times)
   - ✅ Updates patient's device configuration
   - ✅ Returns 200 OK
+
+**Additional Analytics Endpoints (Beyond Requirements):**
+
+- ✅ **Patient Daily Aggregates for Trend Analysis**
+  - ✅ GET `/api/physicians/patients/:patientId/analytics/daily-aggregates?days=30`
+  - ✅ Returns daily averages, min, max for charting
+  - ✅ Configurable time range (default 30 days)
+  - ✅ Perfect for trend visualization
+
+- ✅ **Patient Full Measurement History**
+  - ✅ GET `/api/physicians/patients/:patientId/analytics/history?startDate=...&endDate=...`
+  - ✅ Complete measurement history with pagination
+  - ✅ Optional date range filtering
+  - ✅ Supports limit and page parameters
+
+- ✅ **Patient All-Time Statistics**
+  - ✅ GET `/api/physicians/patients/:patientId/analytics/all-time`
+  - ✅ Comprehensive lifetime health metrics
+  - ✅ Includes lowest/highest recorded values with timestamps
+  - ✅ Shows total days tracked
+  - ✅ Overall averages and ranges
 
 **How to Set Up a Physician Account:**
 
@@ -549,11 +577,17 @@ Infrastructure is ready, but you need to create physician-specific endpoints:
 
 **Implementation Details:**
 - ✅ All physician routes implemented in `src/routes/physicians/`
-- ✅ Three-layer security: JWT → Role Check → Relationship Verification
-- ✅ Reuses existing measurement aggregation logic
+- ✅ Security: JWT → Role Check → Patient Verification (via ObjectId or id field)
+- ✅ Reuses existing measurement aggregation logic from user endpoints
 - ✅ Uses `requirePhysician` middleware from `src/middleware/role/index.ts`
-- ✅ Direct MongoDB queries for user management
-- ✅ Comprehensive documentation in `plan/physician-business-logic-implementation.md`
+- ✅ Direct MongoDB queries for flexible user lookups
+- ✅ Supports both Better Auth `id` field and MongoDB `_id` field
+- ✅ Physicians can access ALL patients (not restricted by association)
+- ✅ Comprehensive documentation:
+  - `plan/physician-business-logic-implementation.md` - Full implementation guide
+  - `plan/PHYSICIAN_FEATURE_SUMMARY.md` - Frontend integration guide
+  - `plan/PHYSICIAN_ANALYTICS_ENDPOINTS.md` - Analytics API docs
+  - `plan/PHYSICIAN_PATIENTS_LIST_API_SCHEMA.md` - Patient list endpoint schema
 
 ### Phase 9: 🎓 ECE 513 HTTPS Implementation - **MANDATORY for ECE 513**
 
@@ -1511,6 +1545,10 @@ pm2 stop hearttrack-api
 
 ---
 
-**Last Updated:** 2025-11-19
+**Last Updated:** 2025-11-20
 
-**Status:** ECE 413 requirements complete. ECE 513 students must implement HTTPS (3 pts) and complete physician portal endpoints.
+**Status:**
+- ✅ ECE 413 requirements: COMPLETE (100%)
+- ⚠️ ECE 513 requirements: PARTIAL (67%)
+  - ✅ Physician Portal: COMPLETE (All 4 core endpoints + 3 analytics endpoints)
+  - ❌ HTTPS Implementation: NOT STARTED (3 points remaining)

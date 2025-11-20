@@ -3,11 +3,8 @@ import { getSEOTags } from "@/lib/seo"
 import { siteConfig } from "@/config/site"
 import {
   HeroSection,
-  AboutSection,
   FeaturesSection,
-  HowItWorksSection,
   TeamSection,
-  TechStackSection,
   CTASection,
 } from "@/components/homepage"
 
@@ -29,11 +26,8 @@ export default function IndexPage() {
       <JsonLd data={jsonLd} />
       <main className="flex-1">
         <HeroSection />
-        <AboutSection />
         <FeaturesSection />
-        <HowItWorksSection />
         <TeamSection />
-        <TechStackSection />
         <CTASection />
       </main>
     </>
