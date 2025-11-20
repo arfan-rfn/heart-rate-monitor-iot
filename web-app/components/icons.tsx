@@ -39,6 +39,9 @@ import {
   RefreshCw,
   Plus,
   Info,
+  Activity,
+  MoreVertical,
+  Pause,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -84,6 +87,9 @@ export const Icons = {
   RefreshCw: RefreshCw,
   Plus: Plus,
   Info: Info,
+  Activity: Activity,
+  MoreVertical: MoreVertical,
+  Pause: Pause,
   Logo: (props: LucideProps) => {
     const height = props.height as unknown as number || props.size as unknown as number || 24;
     const width = props.width as unknown as number || props.size as unknown as number || 24;

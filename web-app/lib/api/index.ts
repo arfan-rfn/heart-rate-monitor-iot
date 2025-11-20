@@ -3,3 +3,4 @@
  */
 
 export { apiClient, APIError } from './client'
+export * from './devices'
