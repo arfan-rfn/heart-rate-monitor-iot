@@ -12,14 +12,19 @@
  *   npm run set-physician dr.smith@hospital.com
  */
 
+import dotenv from 'dotenv';
 import { connectDatabase, disconnectDatabase, getMongoDbInstance } from '../src/config/database.js';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const setPhysicianRole = async (email: string) => {
   try {
     console.log('🔌 Connecting to database...');
     await connectDatabase();
+    console.log('✅ Database connected successfully\n');
 
-    console.log(`\n🔍 Looking for user with email: ${email}`);
+    console.log(`🔍 Looking for user with email: ${email}`);
 
     const db = getMongoDbInstance();
     const userCollection = db.collection('user');
@@ -75,10 +80,25 @@ const setPhysicianRole = async (email: string) => {
     }
   } catch (error) {
     console.error('\n❌ Error:', error instanceof Error ? error.message : error);
+
+    // Check if it's a MongoDB connection error
+    if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+      console.log('\n💡 Troubleshooting Steps:');
+      console.log('   1. Make sure MongoDB is running:');
+      console.log('      brew services start mongodb-community');
+      console.log('   2. Or check your .env file for correct MONGODB_URI');
+      console.log('   3. Verify MongoDB is accessible:');
+      console.log('      mongosh mongodb://localhost:27017');
+    }
+
     process.exit(1);
   } finally {
-    await disconnectDatabase();
-    console.log('\n🔌 Database connection closed');
+    try {
+      await disconnectDatabase();
+      console.log('\n🔌 Database connection closed');
+    } catch (e) {
+      // Ignore disconnect errors if connection never established
+    }
   }
 };
 
