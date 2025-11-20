@@ -1,7 +1,6 @@
 "use client"
 
 import { useAuthContext } from "@/components/providers/auth-provider"
-import { useChangePassword } from "@/hooks/use-user-management"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,12 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { validatePassword } from "@/lib/types/user"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { PasswordStrength, validatePassword } from "@/components/ui/password-strength"
+import { auth } from "@/lib/auth"
+import { toast } from "sonner"
 
 export default function SecuritySettingsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthContext()
-  const changePasswordMutation = useChangePassword()
   const router = useRouter()
 
   const [currentPassword, setCurrentPassword] = useState("")
@@ -23,7 +22,7 @@ export default function SecuritySettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated && !authLoading) {
@@ -31,43 +30,34 @@ export default function SecuritySettingsPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  // Validate new password on change
-  useEffect(() => {
-    if (newPassword) {
-      const { errors } = validatePassword(newPassword)
-      setValidationErrors(errors)
-    } else {
-      setValidationErrors([])
-    }
-  }, [newPassword])
-
+  const passwordValidation = validatePassword(newPassword)
   const passwordsMatch = newPassword === confirmPassword
   const isFormValid =
     currentPassword &&
     newPassword &&
     confirmPassword &&
-    validationErrors.length === 0 &&
+    passwordValidation.isValid &&
     passwordsMatch
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isFormValid) return
 
-    changePasswordMutation.mutate(
-      {
-        currentPassword,
-        newPassword,
-      },
-      {
-        onSuccess: () => {
-          // Reset form
-          setCurrentPassword("")
-          setNewPassword("")
-          setConfirmPassword("")
-          setValidationErrors([])
-        },
-      }
-    )
+    try {
+      setIsLoading(true)
+      await auth.changePassword(currentPassword, newPassword, false)
+      toast.success("Password changed successfully")
+
+      // Reset form
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } catch (error) {
+      console.error("Password change error:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to change password")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (!isAuthenticated && !authLoading) {
@@ -98,7 +88,7 @@ export default function SecuritySettingsPage() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter your current password"
-                  disabled={changePasswordMutation.isPending}
+                  disabled={isLoading}
                   required
                   className="pr-10"
                 />
@@ -128,7 +118,7 @@ export default function SecuritySettingsPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter your new password"
-                  disabled={changePasswordMutation.isPending}
+                  disabled={isLoading}
                   required
                   className="pr-10"
                 />
@@ -147,6 +137,14 @@ export default function SecuritySettingsPage() {
                   )}
                 </Button>
               </div>
+              {newPassword && (
+                <div className="mt-2">
+                  <PasswordStrength password={newPassword} />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Min 8 chars with uppercase, lowercase, and number/special char
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -158,7 +156,7 @@ export default function SecuritySettingsPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your new password"
-                  disabled={changePasswordMutation.isPending}
+                  disabled={isLoading}
                   required
                   className="pr-10"
                 />
@@ -182,55 +180,11 @@ export default function SecuritySettingsPage() {
               )}
             </div>
 
-            {/* Password Requirements */}
-            {newPassword && validationErrors.length > 0 && (
-              <Alert variant="destructive">
-                <Icons.Warning className="size-4" />
-                <AlertDescription>
-                  <p className="font-medium mb-2">Password requirements:</p>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
-                    {validationErrors.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Password Requirements Info */}
-            {!newPassword && (
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <p className="text-sm font-medium mb-2">Password must contain:</p>
-                <ul className="text-xs text-muted-foreground space-y-1">
-                  <li className="flex items-center gap-2">
-                    <Icons.Check className="size-3" />
-                    At least 8 characters
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Icons.Check className="size-3" />
-                    One uppercase letter (A-Z)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Icons.Check className="size-3" />
-                    One lowercase letter (a-z)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Icons.Check className="size-3" />
-                    One number (0-9)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Icons.Check className="size-3" />
-                    One special character (!@#$%^&*...)
-                  </li>
-                </ul>
-              </div>
-            )}
-
             <Button
               type="submit"
-              disabled={!isFormValid || changePasswordMutation.isPending}
+              disabled={!isFormValid || isLoading}
             >
-              {changePasswordMutation.isPending ? (
+              {isLoading ? (
                 <>
                   <Icons.Loader className="size-4 mr-2 animate-spin" />
                   Changing Password...
