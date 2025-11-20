@@ -3,7 +3,6 @@
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "./auth-provider"
 import QueryProvider from "./query-provider"
-import { PostHogProvider } from "./posthog-provider"
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -19,9 +18,7 @@ export default function Providers({ children }: ProvidersProps) {
     >
       <QueryProvider>
         <AuthProvider>
-          <PostHogProvider>
-            {children}
-          </PostHogProvider>
+          {children}
         </AuthProvider>
       </QueryProvider>
     </ThemeProvider>

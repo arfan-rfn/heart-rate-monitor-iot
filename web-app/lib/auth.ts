@@ -116,4 +116,13 @@ export const auth = {
 			callbackURL: absoluteCallbackURL,
 		})
 	},
+
+	// Change password using Better Auth
+	changePassword: async (currentPassword: string, newPassword: string, revokeOtherSessions: boolean = false) => {
+		return await authClient.changePassword({
+			currentPassword,
+			newPassword,
+			revokeOtherSessions,
+		})
+	},
 }

@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth"
 import { toast } from "sonner"
 import { useAuthConfig } from "@/hooks/use-auth-config"
 import { useAuthContext } from "@/components/providers/auth-provider"
+import { PasswordStrength, validatePassword } from "@/components/ui/password-strength"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -66,8 +67,10 @@ export default function SignUpPage() {
       return
     }
 
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters long")
+    // Validate password strength
+    const validation = validatePassword(formData.password)
+    if (!validation.isValid) {
+      toast.error(validation.error)
       return
     }
 
@@ -78,7 +81,7 @@ export default function SignUpPage() {
         email: formData.email,
         password: formData.password,
       })
-      toast.success(authConfig.features.emailVerification 
+      toast.success(authConfig.features.emailVerification
         ? "Account created successfully! Please check your email to verify your account."
         : "Account created successfully!")
       router.push(authConfig.features.emailVerification ? "/auth/sign-in" : authConfig.redirects.afterSignUp)
@@ -248,6 +251,12 @@ export default function SignUpPage() {
                   placeholder="Create a password"
                   disabled={isLoading}
                 />
+                <div className="mt-2">
+                  <PasswordStrength password={formData.password} />
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Min 8 chars with uppercase, lowercase, and number/special char
+                </p>
               </div>
 
               <div>

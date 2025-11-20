@@ -34,7 +34,6 @@ This project contains the web-based user interface for the Heart Track applicati
 - **Icons:** Lucide React
 - **UI Components:** shadcn/ui + Radix UI primitives
 - **Forms:** React Hook Form + Zod validation
-- **Analytics:** PostHog (optional), Google Analytics
 - **ECE 513:** Admin portal interface (partial)
 - **Extra Credit:** AI chat interface (not started)
 
@@ -2173,7 +2172,6 @@ Type error: Cannot find module '@/components/...'
 - Settings pages (account, appearance)
 - Admin portal (users, sessions)
 - SEO optimization (sitemap, metadata, JSON-LD)
-- Analytics (Google Analytics, PostHog)
 
 ### 🚧 In Progress
 - Health data visualization pages

@@ -43,7 +43,6 @@ This is the **web frontend** for a Heart Rate Monitor IoT system (ECE 513 course
 - **Charts**: Chart.js or Recharts for health data visualization
 - **Validation**: Zod schemas throughout
 - **Backend**: External Hono API server (Cloudflare Workers)
-- **Analytics**: PostHog for product analytics
 
 ### Project Structure
 ```
@@ -318,9 +317,6 @@ Currently no test framework is configured. When adding tests:
 ```
 NEXT_PUBLIC_API_URL=https://your-api.workers.dev
 NEXT_PUBLIC_BASE_URL=https://your-app.vercel.app
-NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
-NEXT_PUBLIC_POSTHOG_KEY=phc_xxxxx (optional)
-NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com (optional)
 ```
 
 ## Troubleshooting

@@ -5,8 +5,6 @@ import { siteConfig } from "@/config/site"
 import { fontSans } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
-import { Suspense } from "react"
-import GoogleAnalytics from "@/components/google-analytics"
 import { getSEOTags } from "@/lib/seo"
 import { Toaster } from "@/components/ui/sonner"
 import Providers from "@/components/providers"
@@ -55,9 +53,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
             </div>
             <Toaster />
             <TailwindIndicator />
-            <Suspense>
-              <GoogleAnalytics />
-            </Suspense>
           </Providers>
         </body>
       </html>
