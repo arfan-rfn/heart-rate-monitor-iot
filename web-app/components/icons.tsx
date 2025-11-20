@@ -36,6 +36,9 @@ import {
   BarChart,
   Heart,
   Smartphone,
+  RefreshCw,
+  Plus,
+  Info,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -65,6 +68,7 @@ export const Icons = {
   Bell: Bell,
   Warning: AlertTriangle,
   AlertCircle: AlertCircle,
+  AlertTriangle: AlertTriangle,
   Clock: Clock,
   Location: MapPin,
   Key: Key,
@@ -77,6 +81,9 @@ export const Icons = {
   BarChart: BarChart,
   Heart: Heart,
   Smartphone: Smartphone,
+  RefreshCw: RefreshCw,
+  Plus: Plus,
+  Info: Info,
   Logo: (props: LucideProps) => {
     const height = props.height as unknown as number || props.size as unknown as number || 24;
     const width = props.width as unknown as number || props.size as unknown as number || 24;

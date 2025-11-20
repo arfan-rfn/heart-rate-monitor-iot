@@ -7,6 +7,9 @@ import { asyncHandler, AppError } from '../../middleware/error/index.js';
  * Submit a measurement from IoT device
  * POST /api/measurements
  * Requires: API key authentication
+ *
+ * Note: deviceId is required in request body for account-level API keys.
+ * For device-specific keys, deviceId must match the authenticated device.
  */
 export const submitMeasurement = asyncHandler(async (req: Request, res: Response) => {
   const { deviceId, heartRate, spO2, timestamp, quality, confidence } = req.body;
@@ -19,6 +22,16 @@ export const submitMeasurement = asyncHandler(async (req: Request, res: Response
   // Validate required fields
   if (!deviceId || !heartRate || !spO2) {
     throw new AppError('Device ID, heart rate, and SpO2 are required', 400, 'INVALID_INPUT');
+  }
+
+  // Verify deviceId matches authenticated device
+  // (Middleware already handles this for account-level keys)
+  if (device.deviceId !== deviceId) {
+    throw new AppError(
+      'Device ID mismatch: deviceId in request does not match authenticated device',
+      403,
+      'DEVICE_ID_MISMATCH'
+    );
   }
 
   // Use provided timestamp or current time
