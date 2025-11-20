@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Icons } from "@/components/icons"
 import { useUser } from "@/hooks/use-user"
+import { useUserProfile, useUpdateUserProfile } from "@/hooks/use-user-management"
 import { useUpdateProfile } from "@/hooks/use-account"
 import { useFileUpload } from "@/hooks/use-file-upload"
 import { toast } from "sonner"
@@ -34,10 +35,12 @@ interface ProfileFormData {
 export function ProfileEditDialog({ open, onOpenChange }: ProfileEditDialogProps) {
   const router = useRouter()
   const { data: user, refetch } = useUser()
+  const { data: profile } = useUserProfile()
+  const updateUserProfileMutation = useUpdateUserProfile()
   const updateProfileMutation = useUpdateProfile()
   const { uploadFile, isUploading, progress, error: uploadError, resetUpload } = useFileUpload()
   const [formData, setFormData] = useState<ProfileFormData>({
-    name: user?.name || "",
+    name: profile?.user.name || user?.name || "",
     bio: "", // Add bio field to user data later
     image: user?.avatarUrl || undefined
   })
@@ -111,12 +114,22 @@ export function ProfileEditDialog({ open, onOpenChange }: ProfileEditDialogProps
         }
       }
 
-      await updateProfileMutation.mutateAsync({
-        name: formData.name,
-        bio: formData.bio,
-        image: imageUrl,
-        profileCompleted: true
-      })
+      // Update name via user management API (only supports name)
+      if (formData.name !== (profile?.user.name || user?.name)) {
+        await updateUserProfileMutation.mutateAsync({
+          name: formData.name
+        })
+      }
+
+      // Update image and bio via account API (if needed)
+      if (imageUrl || formData.bio) {
+        await updateProfileMutation.mutateAsync({
+          name: formData.name,
+          bio: formData.bio,
+          image: imageUrl,
+          profileCompleted: true
+        })
+      }
 
       // Refresh user data
       await refetch()
@@ -140,14 +153,14 @@ export function ProfileEditDialog({ open, onOpenChange }: ProfileEditDialogProps
   }
 
   useEffect(() => {
-    if (user) {
+    if (profile?.user || user) {
       setFormData({
-        name: user.name || "",
+        name: profile?.user.name || user?.name || "",
         bio: "", // Bio not available in current API response
-        image: user.avatarUrl || undefined
+        image: user?.avatarUrl || undefined
       })
     }
-  }, [user])
+  }, [user, profile])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -257,17 +270,17 @@ export function ProfileEditDialog({ open, onOpenChange }: ProfileEditDialogProps
           <Button
             variant="outline"
             onClick={handleCancel}
-            disabled={updateProfileMutation.isPending || isUploading}
+            disabled={updateUserProfileMutation.isPending || updateProfileMutation.isPending || isUploading}
             className="w-full sm:w-auto"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
-            disabled={updateProfileMutation.isPending || isUploading}
+            disabled={updateUserProfileMutation.isPending || updateProfileMutation.isPending || isUploading}
             className="w-full sm:w-auto"
           >
-            {(updateProfileMutation.isPending || isUploading) ? (
+            {(updateUserProfileMutation.isPending || updateProfileMutation.isPending || isUploading) ? (
               <>
                 <Icons.Loader className="mr-2 h-4 w-4 animate-spin" />
                 {isUploading ? `Uploading... ${progress}%` : 'Saving...'}

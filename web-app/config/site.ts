@@ -1,9 +1,9 @@
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
-  name: "Heart Track",
+  name: "PulseConnect",
   description:
-    "Heart Track is a platform that helps you track your heart rate and SpO2.",
+    "PulseConnect is a platform that helps you track your heart rate and SpO2.",
   mainNav: [
     {
       title: "Home",

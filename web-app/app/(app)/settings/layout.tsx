@@ -8,10 +8,22 @@ import { Button } from "@/components/ui/button"
 
 const settingsNav = [
   {
+    title: "Profile",
+    href: "/settings/profile",
+    icon: Icons.User,
+    description: "Update your name and view account statistics"
+  },
+  {
     title: "Account",
     href: "/settings/account",
-    icon: Icons.User,
-    description: "Manage your profile and account settings"
+    icon: Icons.Key,
+    description: "View account information and manage sessions"
+  },
+  {
+    title: "Security",
+    href: "/settings/security",
+    icon: Icons.Lock,
+    description: "Change password and security settings"
   },
   {
     title: "Appearance",

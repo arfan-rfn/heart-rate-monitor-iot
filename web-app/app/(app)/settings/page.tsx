@@ -7,8 +7,8 @@ export default function SettingsPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to account settings by default
-    router.replace("/settings/account")
+    // Redirect to profile settings by default
+    router.replace("/settings/profile")
   }, [router])
 
   return null
