@@ -15,7 +15,7 @@ export function HeroSection() {
               {/* Badge */}
               <div className="flex justify-center lg:justify-start">
                 <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium">
-                  ECE 413/513 Project
+                  ECE 513 Final Project
                 </div>
               </div>
 

@@ -42,7 +42,21 @@ import {
   // Params
   deviceIdParamSchema,
   dateParamSchema,
-  deviceMeasurementsQuerySchema
+  deviceMeasurementsQuerySchema,
+  // Physician
+  patientIdParamSchema,
+  physicianDeviceIdParamSchema,
+  physicianDateParamSchema,
+  dailyAggregatesQueryParamsSchema,
+  historyQueryParamsSchema,
+  updatePatientDeviceConfigRequestSchema,
+  getPatientsResponseSchema,
+  getPatientSummaryResponseSchema,
+  getPatientDailyMeasurementsResponseSchema,
+  getPatientDailyAggregatesResponseSchema,
+  getPatientHistoryResponseSchema,
+  getPatientAllTimeStatsResponseSchema,
+  updatePatientDeviceConfigResponseSchema
 } from '../schemas';
 
 // Create registry
@@ -955,6 +969,346 @@ registry.registerPath({
     },
     404: {
       description: 'Device not found',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    }
+  }
+});
+
+// ============================================================================
+// PHYSICIAN PORTAL ENDPOINTS (ECE 513 Graduate Requirement)
+// ============================================================================
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/physicians/patients',
+  tags: ['Physician Portal (ECE 513)'],
+  summary: 'Get all patients list',
+  description: 'List all patients with 7-day summaries and high-level overview stats. Returns patient ID for subsequent API calls. Requires physician role.',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Patients list retrieved successfully',
+      content: {
+        'application/json': {
+          schema: getPatientsResponseSchema
+        }
+      }
+    },
+    401: {
+      description: 'Not authenticated',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    403: {
+      description: 'Not a physician',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    }
+  }
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/physicians/patients/{patientId}/summary',
+  tags: ['Physician Portal (ECE 513)'],
+  summary: 'Get patient weekly summary',
+  description: 'Get patient\'s weekly summary view similar to user\'s weekly summary. Includes device configurations.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: patientIdParamSchema
+  },
+  responses: {
+    200: {
+      description: 'Patient summary retrieved successfully',
+      content: {
+        'application/json': {
+          schema: getPatientSummaryResponseSchema
+        }
+      }
+    },
+    401: {
+      description: 'Not authenticated',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    403: {
+      description: 'Not a physician',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    404: {
+      description: 'Patient not found',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    }
+  }
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/physicians/patients/{patientId}/daily/{date}',
+  tags: ['Physician Portal (ECE 513)'],
+  summary: 'Get patient daily measurements',
+  description: 'Get all measurements for a patient on a specific date. Same as user\'s detailed day view.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: physicianDateParamSchema
+  },
+  responses: {
+    200: {
+      description: 'Patient daily measurements retrieved successfully',
+      content: {
+        'application/json': {
+          schema: getPatientDailyMeasurementsResponseSchema
+        }
+      }
+    },
+    400: {
+      description: 'Invalid date format',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    401: {
+      description: 'Not authenticated',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    403: {
+      description: 'Not a physician',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    404: {
+      description: 'Patient not found',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    }
+  }
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/physicians/patients/{patientId}/analytics/daily-aggregates',
+  tags: ['Physician Portal (ECE 513)'],
+  summary: 'Get patient daily aggregates for trend analysis',
+  description: 'Get daily summary statistics for trend charts. Configurable time range (default 30 days).',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: patientIdParamSchema,
+    query: dailyAggregatesQueryParamsSchema
+  },
+  responses: {
+    200: {
+      description: 'Patient daily aggregates retrieved successfully',
+      content: {
+        'application/json': {
+          schema: getPatientDailyAggregatesResponseSchema
+        }
+      }
+    },
+    401: {
+      description: 'Not authenticated',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    403: {
+      description: 'Not a physician',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    404: {
+      description: 'Patient not found',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    }
+  }
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/physicians/patients/{patientId}/analytics/history',
+  tags: ['Physician Portal (ECE 513)'],
+  summary: 'Get patient full measurement history',
+  description: 'Get complete measurement history with optional date range filtering and pagination.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: patientIdParamSchema,
+    query: historyQueryParamsSchema
+  },
+  responses: {
+    200: {
+      description: 'Patient history retrieved successfully',
+      content: {
+        'application/json': {
+          schema: getPatientHistoryResponseSchema
+        }
+      }
+    },
+    401: {
+      description: 'Not authenticated',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    403: {
+      description: 'Not a physician',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    404: {
+      description: 'Patient not found',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    }
+  }
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/physicians/patients/{patientId}/analytics/all-time',
+  tags: ['Physician Portal (ECE 513)'],
+  summary: 'Get patient all-time statistics',
+  description: 'Get comprehensive lifetime health metrics including lowest/highest recorded values with timestamps.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: patientIdParamSchema
+  },
+  responses: {
+    200: {
+      description: 'Patient all-time stats retrieved successfully',
+      content: {
+        'application/json': {
+          schema: getPatientAllTimeStatsResponseSchema
+        }
+      }
+    },
+    401: {
+      description: 'Not authenticated',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    403: {
+      description: 'Not a physician',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    404: {
+      description: 'Patient not found',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    }
+  }
+});
+
+registry.registerPath({
+  method: 'put',
+  path: '/api/physicians/patients/{patientId}/devices/{deviceId}/config',
+  tags: ['Physician Portal (ECE 513)'],
+  summary: 'Update patient device configuration',
+  description: 'Physician can adjust patient device measurement frequency and active time ranges.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: physicianDeviceIdParamSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: updatePatientDeviceConfigRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      description: 'Device configuration updated successfully',
+      content: {
+        'application/json': {
+          schema: updatePatientDeviceConfigResponseSchema
+        }
+      }
+    },
+    400: {
+      description: 'Invalid configuration values',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    401: {
+      description: 'Not authenticated',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    403: {
+      description: 'Not a physician',
+      content: {
+        'application/json': {
+          schema: errorSchema
+        }
+      }
+    },
+    404: {
+      description: 'Patient or device not found',
       content: {
         'application/json': {
           schema: errorSchema

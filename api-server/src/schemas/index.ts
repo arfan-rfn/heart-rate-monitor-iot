@@ -4,3 +4,4 @@ export * from './auth';
 export * from './users';
 export * from './devices';
 export * from './measurements';
+export * from './physicians';
