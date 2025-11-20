@@ -2,24 +2,41 @@
 
 ## Overview
 
-This project contains the web-based user interface for the Heart Track application built with **Next.js 14+, React, TypeScript, and Tailwind CSS**. It provides an intuitive, responsive dashboard for users to view their heart rate and SpO2 measurements, manage devices, and interact with their health data. The frontend communicates with the backend API to display real-time health metrics, weekly summaries, and detailed daily views.
+This project contains the web-based user interface for the Heart Track application built with **Next.js 15.2.4, React 19, TypeScript, and Tailwind CSS v4**. It provides an intuitive, responsive dashboard for users to view their heart rate and SpO2 measurements, manage devices, and interact with their health data. The frontend communicates with the backend API to display real-time health metrics, weekly summaries, and detailed daily views.
 
-> **Note:** This project uses Next.js with the App Router, TypeScript for type safety, and Tailwind CSS for styling. This modern stack provides better performance, developer experience, and maintainability compared to vanilla JavaScript approaches.
+> **Note:** This project uses Next.js with the App Router, TypeScript strict mode for type safety, and Tailwind CSS v4 (PostCSS-based) for styling. This modern stack provides better performance, developer experience, and maintainability.
+
+## ⚠️ Recent Updates (2025-11-19)
+
+### Better Auth Integration ✅
+- **Migrated to Better Auth v1.3.29** for authentication
+- All auth flows now working correctly with backend
+- Fixed session state update issues (see `SESSION_FIX_SUMMARY.md`)
+- Session cookies properly configured for cross-origin requests
+
+### Key Implementation Details
+1. **Authentication:** Better Auth with email/password, Google OAuth, Apple, and Magic Link
+2. **Frontend Framework:** Next.js 15.2.4 with App Router and React 19
+3. **UI Library:** shadcn/ui with Radix UI primitives (64+ components)
+4. **State Management:** TanStack Query for server state, Better Auth for auth state
+5. **Styling:** Tailwind CSS v4 with dark mode support
 
 ## Technology Stack
 
-- **Framework:** Next.js 14+ (React-based framework with App Router)
-- **Core:** React 18+, TypeScript
-- **Styling:** Tailwind CSS for responsive design
-- **Charts:** Chart.js (v4.x) or Recharts for data visualization
-- **State Management:** React Context API / Zustand
-- **API Communication:** Next.js API Routes and fetch API for RESTful endpoints
-- **Authentication:** NextAuth.js or custom JWT implementation
-- **Storage:** HTTP-only cookies for JWT tokens (secure)
-- **Icons:** Lucide React or Heroicons
-- **UI Components:** shadcn/ui or custom components
-- **ECE 513:** Physician portal interface
-- **Extra Credit:** AI chat interface with streaming responses
+- **Framework:** Next.js 15.2.4 (React-based framework with App Router)
+- **Core:** React 19, TypeScript (strict mode)
+- **Styling:** Tailwind CSS v4 (PostCSS-based configuration)
+- **Charts:** Chart.js or Recharts (to be integrated)
+- **State Management:** TanStack Query (React Query), Zustand stores
+- **API Communication:** Fetch API with custom client wrapper
+- **Authentication:** Better Auth v1.3.29 (session-based)
+- **Storage:** HTTP-only cookies for session tokens (secure)
+- **Icons:** Lucide React
+- **UI Components:** shadcn/ui + Radix UI primitives
+- **Forms:** React Hook Form + Zod validation
+- **Analytics:** PostHog (optional), Google Analytics
+- **ECE 513:** Admin portal interface (partial)
+- **Extra Credit:** AI chat interface (not started)
 
 ## System Architecture
 
@@ -132,72 +149,79 @@ This project contains the web-based user interface for the Heart Track applicati
 
 ## TODO List
 
-### Phase 1: Project Setup & Basic Structure
+### Phase 1: Project Setup & Basic Structure ✅
 
-- [ ] **Project Initialization**
-  - [ ] Create project folder structure
-  - [ ] Set up `.gitignore` for web project
-  - [ ] Create `package.json` (optional for build tools)
-  - [ ] Set up local development server (Live Server or similar)
+- [x] **Project Initialization**
+  - [x] Create project folder structure (Next.js App Router)
+  - [x] Set up `.gitignore` for Next.js project
+  - [x] Create `package.json` with dependencies
+  - [x] Set up development server (Next.js dev)
 
-- [ ] **File Structure Setup**
-  - [ ] Create HTML files (index.html, login.html, dashboard.html, etc.)
-  - [ ] Create CSS files (styles.css, variables.css, responsive.css)
-  - [ ] Create JavaScript files (app.js, api.js, auth.js, charts.js)
-  - [ ] Create assets folder for images/icons
-  - [ ] Set up modular architecture
+- [x] **File Structure Setup**
+  - [x] Set up App Router structure (`app/` directory)
+  - [x] Configure TypeScript (`tsconfig.json`)
+  - [x] Set up Tailwind CSS v4 configuration
+  - [x] Create component directories
+  - [x] Set up modular architecture with TypeScript
 
-- [ ] **CSS Framework & Variables**
-  - [ ] Define CSS custom properties (colors, fonts, spacing)
-  - [ ] Set up base reset/normalize styles
-  - [ ] Create utility classes
-  - [ ] Implement responsive grid system
-  - [ ] Define breakpoints for mobile, tablet, desktop
+- [x] **CSS Framework & Variables**
+  - [x] Configure Tailwind CSS v4 (PostCSS-based)
+  - [x] Define CSS custom properties in `app/globals.css`
+  - [x] Set up base reset/normalize styles (Tailwind)
+  - [x] Create utility classes with Tailwind
+  - [x] Define responsive breakpoints (sm, md, lg, xl, 2xl)
 
-- [ ] **HTML Templates**
-  - [ ] Create semantic HTML structure
-  - [ ] Add meta tags for SEO and viewport
-  - [ ] Include accessibility attributes (ARIA)
-  - [ ] Set up template structure for each page
-  - [ ] Create reusable component templates
+- [x] **Component Templates**
+  - [x] Create shadcn/ui component library (64+ components)
+  - [x] Add meta tags for SEO and viewport
+  - [x] Include accessibility attributes (Radix UI)
+  - [x] Set up Next.js layout templates
+  - [x] Create reusable React component templates
 
-### Phase 2: Authentication UI ✓ (Milestone)
+### Phase 2: Authentication UI ✅ (Milestone)
 
-- [ ] **Login Page**
-  - [ ] Design login form (email, password)
-  - [ ] Add form validation (client-side)
-  - [ ] Implement error message display
-  - [ ] Add "Remember Me" checkbox (optional)
-  - [ ] Add "Forgot Password" link (optional)
-  - [ ] Style with CSS (responsive)
-  - [ ] Add loading spinner during submission
-  - [ ] Integrate with backend login endpoint
+- [x] **Sign-In Page** (`app/(app)/auth/sign-in/page.tsx`)
+  - [x] Design sign-in form (email, password)
+  - [x] Add form validation with Zod
+  - [x] Implement error message display (Sonner toasts)
+  - [x] Add "Remember Me" checkbox
+  - [x] Add "Forgot Password" link
+  - [x] Style with Tailwind CSS (responsive)
+  - [x] Add loading spinner during submission
+  - [x] Integrate with Better Auth backend (`/api/auth/sign-in/email`)
+  - [x] Google OAuth integration
+  - [x] Apple sign-in integration
+  - [x] Magic link authentication option
 
-- [ ] **Signup Page**
-  - [ ] Design registration form (name, email, password, confirm password)
-  - [ ] Add email format validation
-  - [ ] Add password strength meter
-  - [ ] Implement password match validation
-  - [ ] Add terms of service checkbox
-  - [ ] Style with CSS (responsive)
-  - [ ] Add loading spinner during submission
-  - [ ] Integrate with backend register endpoint
+- [x] **Sign-Up Page** (`app/(app)/auth/sign-up/page.tsx`)
+  - [x] Design registration form (name, email, password)
+  - [x] Add email format validation with Zod
+  - [x] Add password strength indicators
+  - [x] Implement password validation
+  - [x] Add terms of service checkbox
+  - [x] Style with Tailwind CSS (responsive)
+  - [x] Add loading spinner during submission
+  - [x] Integrate with Better Auth backend (`/api/auth/sign-up/email`)
+  - [x] OAuth options (Google, Apple)
+  - [x] Magic link signup option
 
-- [ ] **Authentication Logic**
-  - [ ] Create auth.js module
-  - [ ] Implement login function with API call
-  - [ ] Implement register function with API call
-  - [ ] Store JWT token in localStorage
-  - [ ] Implement logout function (clear token)
-  - [ ] Create auth check function (verify token exists)
-  - [ ] Redirect to dashboard after successful login
-  - [ ] Redirect to login if not authenticated
+- [x] **Authentication Logic** (Better Auth)
+  - [x] Create auth client (`lib/auth.ts`)
+  - [x] Implement sign-in with email/password
+  - [x] Implement sign-up function
+  - [x] Session tokens stored in HTTP-only cookies (secure)
+  - [x] Implement sign-out function
+  - [x] Create auth check hook (`useSession`)
+  - [x] Redirect to dashboard after successful login
+  - [x] Redirect to sign-in if not authenticated
+  - [x] Magic link verification (`app/(app)/auth/magic-link/verify/page.tsx`)
 
-- [ ] **Error Handling**
-  - [ ] Display server error messages (401, 400, etc.)
-  - [ ] Handle network errors gracefully
-  - [ ] Show user-friendly error messages
-  - [ ] Clear errors on input change
+- [x] **Error Handling**
+  - [x] Display server error messages with Sonner toasts
+  - [x] Handle network errors gracefully
+  - [x] Show user-friendly error messages
+  - [x] Clear errors on input change
+  - [x] Handle session expiration (401)
 
 ### Phase 3: Dashboard & Navigation
 
@@ -2119,6 +2143,59 @@ Type error: Cannot find module '@/components/...'
 
 ---
 
-**Last Updated:** 2025-10-22
+## 📊 Implementation Status
 
-**Note:** This project has been updated to use Next.js 14+ with TypeScript and Tailwind CSS for the frontend, replacing the original vanilla JavaScript approach.
+**Overall Completion:** ~55% (Foundation complete, features in progress)
+
+| Phase | Status | Progress |
+|-------|--------|----------|
+| **1. Project Setup** | ✅ Complete | 100% |
+| **2. Authentication** | ✅ Complete | 100% |
+| **3. Dashboard/Nav** | 🟡 Partial | 80% |
+| **4. Weekly Summary** | ❌ Not Started | 0% |
+| **5. Daily View + Charts** | ❌ Not Started | 0% |
+| **6. Device Management** | ❌ Not Started | 0% |
+| **7. Account Settings** | ✅ Complete | 100% |
+| **8. Responsive Design** | 🟡 Partial | 60% |
+| **9. Physician Portal** | 🟡 Partial | 20% |
+| **10. AI Chat** | ❌ Not Started | 0% |
+| **11. Additional Pages** | ✅ Complete | 100% |
+| **12. Testing** | ❌ Not Started | 0% |
+| **13. Documentation** | 🟡 Partial | 70% |
+
+### ✅ Completed
+- Next.js 15 + React 19 + TypeScript setup
+- Tailwind CSS v4 configuration
+- shadcn/ui component library (64+ components)
+- Better Auth integration (email, OAuth, Magic Link)
+- Sign-in and sign-up pages with full validation
+- Dashboard structure and navigation
+- Settings pages (account, appearance)
+- Admin portal (users, sessions)
+- SEO optimization (sitemap, metadata, JSON-LD)
+- Analytics (Google Analytics, PostHog)
+
+### 🚧 In Progress
+- Health data visualization pages
+- Chart.js/Recharts integration
+- Responsive mobile design
+- Device management UI
+
+### ❌ To Do
+- Weekly summary view
+- Daily detailed view with charts
+- Device CRUD interface
+- Physician portal completion
+- AI chat interface (extra credit)
+- Testing suite
+
+See `IMPLEMENTATION_STATUS.md` for detailed status and metrics.
+
+---
+
+**Last Updated:** 2025-11-19
+
+**Current Stack:** Next.js 15.2.4 + React 19 + TypeScript + Tailwind CSS v4 + Better Auth
+
+**Frontend Server:** http://localhost:3000
+**Backend API:** http://localhost:4000/api

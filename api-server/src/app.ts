@@ -8,6 +8,7 @@ import { auth } from './config/auth.js';
 import { toNodeHandler } from 'better-auth/node';
 import deviceRoutes from './routes/device.routes.js';
 import measurementRoutes from './routes/measurement.routes.js';
+import userRoutes from './routes/user.routes.js';
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 
 /**
@@ -81,6 +82,7 @@ export const createApp = (): Application => {
   // ===== API Routes =====
   app.use('/api/devices', deviceRoutes);
   app.use('/api/measurements', measurementRoutes);
+  app.use('/api/users', userRoutes);
 
   // ===== API Info Endpoint =====
   app.get('/api', (req: Request, res: Response) => {
@@ -111,6 +113,13 @@ export const createApp = (): Application => {
           daily: 'GET /api/measurements/daily/:date',
           aggregates: 'GET /api/measurements/daily-aggregates',
           byDevice: 'GET /api/measurements/device/:deviceId',
+        },
+        users: {
+          getProfile: 'GET /api/users/profile',
+          updateProfile: 'PUT /api/users/profile',
+          changePassword: 'POST /api/users/change-password',
+          deleteAccount: 'DELETE /api/users/profile',
+          updatePhysician: 'PUT /api/users/physician',
         },
       },
     });

@@ -4,14 +4,29 @@
 
 This project contains the Node.js/Express backend server that provides RESTful API endpoints for the Heart Track application. It manages user authentication, device registration, health data storage in MongoDB, and serves as the bridge between IoT devices and the web frontend.
 
+## ⚠️ Recent Updates (2025-11-19)
+
+### Better Auth Integration ✅
+- **Migrated from custom JWT to Better Auth** for modern, secure authentication
+- All auth endpoints now use Better Auth's session-based system
+- Fixed critical bug in auth handler integration (see `BACKEND_FIX_SUMMARY.md`)
+- Session cookies properly configured for cross-origin requests
+
+### Key Changes
+1. **Authentication:** Better Auth v1.3.29 with MongoDB adapter
+2. **Endpoints:** `/api/auth/sign-up/email`, `/api/auth/sign-in/email`, `/api/auth/get-session`
+3. **Middleware:** Session-based authentication (7-day expiry)
+4. **Security:** bcrypt password hashing (10 salt rounds), httpOnly cookies, CORS support
+
 ## Technology Stack
 
 - **Runtime:** Node.js (v20+ LTS recommended)
-- **Framework:** Express.js
+- **Framework:** Express.js v5
 - **Database:** MongoDB with Mongoose ODM
-- **Authentication:** JWT (JSON Web Tokens)
+- **Authentication:** Better Auth (session-based with MongoDB adapter)
 - **Security:** bcrypt, helmet, express-rate-limit, cors
-- **Testing:** Jest, Supertest
+- **Testing:** Jest
+- **Development:** TypeScript, nodemon, tsx
 - **Process Management:** PM2 (production)
 - **HTTPS:** Let's Encrypt SSL certificates (ECE 513)
 - **Extra Credit:** Ollama (local LLM) with RAG pattern
@@ -41,237 +56,245 @@ This project contains the Node.js/Express backend server that provides RESTful A
 
 ## TODO List
 
-### Phase 1: Project Setup & Basic Infrastructure
+### Phase 1: Project Setup & Basic Infrastructure ✅
 
-- [ ] **Project Initialization**
-  - [ ] Initialize Node.js project (`npm init`)
-  - [ ] Set up Git repository structure
-  - [ ] Create `.gitignore` for node_modules, .env, logs
-  - [ ] Set up ESLint and Prettier for code quality
-  - [ ] Create project folder structure
+- [x] **Project Initialization**
+  - [x] Initialize Node.js project (`npm init`)
+  - [x] Set up Git repository structure
+  - [x] Create `.gitignore` for node_modules, .env, logs
+  - [x] Set up ESLint and Prettier for code quality
+  - [x] Create project folder structure
 
-- [ ] **Dependencies Installation**
-  - [ ] Install Express.js
-  - [ ] Install Mongoose (MongoDB ODM)
-  - [ ] Install security packages (helmet, cors, express-rate-limit)
-  - [ ] Install authentication packages (jsonwebtoken, bcryptjs)
-  - [ ] Install utility packages (dotenv, validator, morgan)
-  - [ ] Install development dependencies (nodemon, jest, supertest)
+- [x] **Dependencies Installation**
+  - [x] Install Express.js
+  - [x] Install Mongoose (MongoDB ODM)
+  - [x] Install security packages (helmet, cors, express-rate-limit)
+  - [x] Install authentication packages (Better Auth with bcrypt)
+  - [x] Install utility packages (dotenv, validator, morgan)
+  - [x] Install development dependencies (nodemon, jest, tsx)
 
-- [ ] **Environment Configuration**
-  - [ ] Create `.env.example` template
-  - [ ] Configure MongoDB connection string
-  - [ ] Set JWT secret key
-  - [ ] Configure server port
-  - [ ] Add API key secrets
-  - [ ] Set CORS allowed origins
+- [x] **Environment Configuration**
+  - [x] Create `.env.example` template
+  - [x] Configure MongoDB connection string
+  - [x] Set Better Auth secret key
+  - [x] Configure server port
+  - [x] Add API key secrets
+  - [x] Set CORS allowed origins
 
-- [ ] **MongoDB Database Setup**
-  - [ ] Set up MongoDB Atlas (cloud)
-  - [ ] Create database named `hearttrack`
-  - [ ] Configure connection pooling
-  - [ ] Set up database indexes
-  - [ ] Test database connectivity
+- [x] **MongoDB Database Setup**
+  - [x] Set up MongoDB Atlas (cloud)
+  - [x] Create database named `hearttrack`
+  - [x] Configure connection pooling
+  - [x] Set up database indexes
+  - [x] Test database connectivity
 
-### Phase 2: Database Models & Schemas
+### Phase 2: Database Models & Schemas ✅
 
-- [ ] **User Model**
-  - [ ] Create User schema with email, password, name, role
-  - [ ] Add password hashing pre-save hook (bcrypt)
-  - [ ] Add password comparison method
-  - [ ] Add email validation
-  - [ ] Add timestamps (createdAt, updatedAt with timezone)
-  - [ ] Add physician reference (ECE 513)
-  - [ ] Create indexes on email (unique)
+- [x] **User Model** (via Better Auth)
+  - [x] Create User schema with email, password, name, role
+  - [x] Add password hashing pre-save hook (bcrypt with 10 salt rounds)
+  - [x] Add password comparison method
+  - [x] Add email validation
+  - [x] Add timestamps (createdAt, updatedAt with timezone)
+  - [x] Add physician reference (ECE 513)
+  - [x] Create indexes on email (unique)
 
-- [ ] **Device Model**
-  - [ ] Create Device schema with deviceId, userId, name, status
-  - [ ] Add API key field (auto-generated)
-  - [ ] Add configuration fields (frequency, timeRange)
-  - [ ] Add registration timestamp with timezone
-  - [ ] Add last seen/heartbeat timestamp with timezone
-  - [ ] Create indexes on deviceId and userId
-  - [ ] Add device status enum (active, inactive, error)
+- [x] **Device Model**
+  - [x] Create Device schema with deviceId, userId, name, status
+  - [x] Add API key field (auto-generated with crypto)
+  - [x] Add configuration fields (frequency, timeRange, timezone)
+  - [x] Add registration timestamp with timezone
+  - [x] Add last seen/heartbeat timestamp with timezone
+  - [x] Create indexes on deviceId and userId
+  - [x] Add device status enum (active, inactive, error)
 
-- [ ] **Measurement Model**
-  - [ ] Create Measurement schema
-  - [ ] Add fields: heartRate, spO2, timestamp with timezone, quality, confidence
-  - [ ] Add references to userId and deviceId
-  - [ ] Add data validation (range checks)
-  - [ ] Create compound indexes (userId + timestamp, deviceId + timestamp)
+- [x] **Measurement Model**
+  - [x] Create Measurement schema
+  - [x] Add fields: heartRate, spO2, timestamp with timezone, quality, confidence
+  - [x] Add references to userId and deviceId
+  - [x] Add data validation (range checks: HR 40-200, SpO2 70-100)
+  - [x] Create compound indexes (userId + timestamp, deviceId + timestamp)
   - [ ] Add TTL index for data retention (optional)
 
 - [ ] **Physician Model (ECE 513 only)**
-  - [ ] Create Physician schema extending User
+  - [x] User model supports physician role via Better Auth
   - [ ] Add specialty field
   - [ ] Add license number
   - [ ] Add patient reference array
   - [ ] Add separate registration workflow
 
-### Phase 3: Authentication System ✓ (Milestone)
+### Phase 3: Authentication System ✅ (Milestone)
 
-- [ ] **User Registration**
-  - [ ] POST `/api/auth/register` endpoint
-  - [ ] Validate email format and uniqueness
-  - [ ] Enforce strong password requirements
-  - [ ] Hash password with bcrypt (salt rounds: 10)
-  - [ ] Create user in database
-  - [ ] Return sanitized user data (no password)
-  - [ ] Return 201 Created on success
+- [x] **User Registration** (via Better Auth)
+  - [x] POST `/api/auth/sign-up/email` endpoint
+  - [x] Validate email format and uniqueness
+  - [x] Enforce strong password requirements
+  - [x] Hash password with bcrypt (salt rounds: 10)
+  - [x] Create user in database
+  - [x] Return sanitized user data (no password)
+  - [x] Return session token and user data
 
-- [ ] **User Login**
-  - [ ] POST `/api/auth/login` endpoint
-  - [ ] Validate email and password
-  - [ ] Compare hashed passwords
-  - [ ] Generate JWT token (24h expiry)
-  - [ ] Include userId and role in token payload
-  - [ ] Return token and user info
-  - [ ] Return 401 Unauthorized on failure
+- [x] **User Login** (via Better Auth)
+  - [x] POST `/api/auth/sign-in/email` endpoint
+  - [x] Validate email and password
+  - [x] Compare hashed passwords with bcrypt
+  - [x] Generate session token (7 days expiry)
+  - [x] Include userId and role in session
+  - [x] Return token and user info
+  - [x] Return 401 Unauthorized on failure
 
-- [ ] **JWT Middleware**
-  - [ ] Create authentication middleware
-  - [ ] Verify JWT token from Authorization header
-  - [ ] Extract user info from token
-  - [ ] Attach user to request object
-  - [ ] Handle expired tokens (401)
-  - [ ] Handle invalid tokens (403)
+- [x] **Session Middleware** (via Better Auth)
+  - [x] Create authentication middleware
+  - [x] Verify session token from cookies
+  - [x] Extract user info from session
+  - [x] Attach user to request object
+  - [x] Handle expired sessions (401)
+  - [x] Handle invalid tokens (403)
 
-- [ ] **Password Management**
-  - [ ] Implement password strength validation
+- [x] **Password Management**
+  - [x] Implement password strength validation (Better Auth)
   - [ ] Add password reset functionality (optional)
   - [ ] Add email verification (optional)
 
-### Phase 4: Device Management Endpoints ✓ (Milestone)
+### Phase 4: Device Management Endpoints ✅ (Milestone)
 
-- [ ] **Device Registration**
-  - [ ] POST `/api/devices` endpoint
-  - [ ] Require authentication
-  - [ ] Validate device ID uniqueness
-  - [ ] Generate API key for device
-  - [ ] Set default configuration
-  - [ ] Associate device with user
-  - [ ] Return device info with API key
-  - [ ] Return 201 Created
+- [x] **Device Registration**
+  - [x] POST `/api/devices` endpoint
+  - [x] Require authentication (JWT/Session)
+  - [x] Validate device ID uniqueness
+  - [x] Generate API key for device (crypto.randomBytes)
+  - [x] Set default configuration (30min frequency, 6am-10pm)
+  - [x] Associate device with user
+  - [x] Return device info with API key
+  - [x] Return 201 Created
 
-- [ ] **List User Devices**
-  - [ ] GET `/api/devices` endpoint
-  - [ ] Require authentication
-  - [ ] Return all devices for current user
-  - [ ] Include device status and last seen
+- [x] **List User Devices**
+  - [x] GET `/api/devices` endpoint
+  - [x] Require authentication
+  - [x] Return all devices for current user
+  - [x] Include device status and last seen
   - [ ] Support pagination (optional)
-  - [ ] Return 200 OK
+  - [x] Return 200 OK
 
-- [ ] **Get Single Device**
-  - [ ] GET `/api/devices/:deviceId` endpoint
-  - [ ] Verify device belongs to user
-  - [ ] Return device details
-  - [ ] Return 404 if not found
-  - [ ] Return 403 if not authorized
+- [x] **Get Single Device**
+  - [x] GET `/api/devices/:deviceId` endpoint
+  - [x] Verify device belongs to user
+  - [x] Return device details
+  - [x] Return 404 if not found
+  - [x] Return 403 if not authorized
 
-- [ ] **Update Device**
-  - [ ] PUT/PATCH `/api/devices/:deviceId` endpoint
-  - [ ] Allow updating name, status
-  - [ ] Validate updates
-  - [ ] Return updated device
-  - [ ] Return 200 OK
+- [x] **Update Device**
+  - [x] PUT `/api/devices/:deviceId` endpoint
+  - [x] Allow updating name, status
+  - [x] Validate updates
+  - [x] Return updated device
+  - [x] Return 200 OK
 
-- [ ] **Delete Device**
-  - [ ] DELETE `/api/devices/:deviceId` endpoint
-  - [ ] Verify ownership
-  - [ ] Optionally delete associated measurements
-  - [ ] Return 204 No Content
-  - [ ] Handle cascading deletes
+- [x] **Delete Device**
+  - [x] DELETE `/api/devices/:deviceId` endpoint
+  - [x] Verify ownership
+  - [x] Optionally delete associated measurements
+  - [x] Return 204 No Content
+  - [x] Handle cascading deletes
 
-### Phase 5: Measurement Data Endpoints ✓ (Milestone)
+### Phase 5: Measurement Data Endpoints ✅ (Milestone)
 
-- [ ] **Submit Measurement (IoT Device)**
-  - [ ] POST `/api/measurements` endpoint
-  - [ ] Validate API key in X-API-Key header
-  - [ ] Verify device exists and is active
-  - [ ] Validate measurement data (ranges)
-  - [ ] Add timestamp with timezone if not provided
-  - [ ] Store measurement in database
-  - [ ] Return 201 Created
-  - [ ] Return 400 for invalid data
+- [x] **Submit Measurement (IoT Device)**
+  - [x] POST `/api/measurements` endpoint
+  - [x] Validate API key in X-API-Key header
+  - [x] Verify device exists and is active
+  - [x] Validate measurement data (HR: 40-200, SpO2: 70-100)
+  - [x] Add timestamp with timezone if not provided
+  - [x] Store measurement in database
+  - [x] Return 201 Created
+  - [x] Return 400 for invalid data
 
-- [ ] **Get User Measurements**
-  - [ ] GET `/api/measurements` endpoint
-  - [ ] Require JWT authentication
-  - [ ] Support query parameters (startDate, endDate, deviceId)
-  - [ ] Return measurements sorted by timestamp DESC
-  - [ ] Support pagination
-  - [ ] Return 200 OK
+- [x] **Get User Measurements**
+  - [x] GET `/api/measurements` endpoint
+  - [x] Require JWT/Session authentication
+  - [x] Support query parameters (startDate, endDate, deviceId)
+  - [x] Return measurements sorted by timestamp DESC
+  - [x] Support pagination (limit parameter)
+  - [x] Return 200 OK
 
-- [ ] **Get Daily Measurements**
-  - [ ] GET `/api/measurements/daily/:date` endpoint
-  - [ ] Filter measurements for specific day
-  - [ ] Group by device if multiple devices
-  - [ ] Return sorted by timestamp ASC
-  - [ ] Return 200 OK
+- [x] **Get Daily Measurements**
+  - [x] GET `/api/measurements/daily/:date` endpoint
+  - [x] Filter measurements for specific day
+  - [x] Group by device if multiple devices
+  - [x] Return sorted by timestamp ASC
+  - [x] Return 200 OK
 
-- [ ] **Get Weekly Summary**
-  - [ ] GET `/api/measurements/weekly/summary` endpoint
-  - [ ] Calculate last 7 days statistics
-  - [ ] Compute average, min, max heart rate
-  - [ ] Group by day
-  - [ ] Return aggregated data
-  - [ ] Return 200 OK
+- [x] **Get Weekly Summary**
+  - [x] GET `/api/measurements/weekly/summary` endpoint
+  - [x] Calculate last 7 days statistics
+  - [x] Compute average, min, max heart rate and SpO2
+  - [x] Group by day
+  - [x] Return aggregated data
+  - [x] Return 200 OK
 
-### Phase 6: Device Configuration Endpoints
+### Phase 6: Device Configuration Endpoints ✅
 
-- [ ] **Get Device Configuration**
-  - [ ] GET `/api/devices/:deviceId/config` endpoint
-  - [ ] Validate API key (for device) or JWT (for user)
-  - [ ] Return measurement frequency
-  - [ ] Return active time range (start/end)
-  - [ ] Return timezone
-  - [ ] Return 200 OK
+- [x] **Get Device Configuration**
+  - [x] GET `/api/devices/:deviceId/config` endpoint
+  - [x] Validate API key (for device) or Session (for user)
+  - [x] Return measurement frequency
+  - [x] Return active time range (start/end)
+  - [x] Return timezone
+  - [x] Return 200 OK
 
-- [ ] **Update Device Configuration**
-  - [ ] PUT `/api/devices/:deviceId/config` endpoint
-  - [ ] Require JWT authentication (user or physician)
-  - [ ] Allow updating frequency (min: 15 min, max: 4 hours)
-  - [ ] Allow updating time range
-  - [ ] Validate inputs
-  - [ ] Return updated configuration
-  - [ ] Return 200 OK
+- [x] **Update Device Configuration**
+  - [x] PUT `/api/devices/:deviceId/config` endpoint
+  - [x] Require Session authentication (user or physician)
+  - [x] Allow updating frequency (validated: 900-14400 seconds)
+  - [x] Allow updating time range
+  - [x] Validate inputs
+  - [x] Return updated configuration
+  - [x] Return 200 OK
 
-- [ ] **Configuration Change Notification**
-  - [ ] Implement mechanism for device to poll for config changes
-  - [ ] Add lastConfigUpdate timestamp with timezone
-  - [ ] Device checks on heartbeat or periodic interval
+- [x] **Configuration Change Notification**
+  - [x] Implement mechanism for device to poll for config changes
+  - [x] Add lastConfigUpdate timestamp (via updatedAt)
+  - [x] Device can check on periodic GET /config calls
 
-### Phase 7: User Account Management
+### Phase 7: User Account Management ✅
 
-- [ ] **Get User Profile**
-  - [ ] GET `/api/users/profile` endpoint
-  - [ ] Require authentication
-  - [ ] Return user info (exclude password)
-  - [ ] Include device count
-  - [ ] Return 200 OK
+- [x] **Get User Profile**
+  - [x] GET `/api/users/profile` endpoint
+  - [x] Require authentication (JWT/Session)
+  - [x] Return user info (exclude password)
+  - [x] Include device count and recent measurement stats
+  - [x] Return 200 OK
 
-- [ ] **Update User Profile**
-  - [ ] PUT/PATCH `/api/users/profile` endpoint
-  - [ ] Allow updating name, other non-sensitive fields
-  - [ ] Prevent email updates
-  - [ ] Validate inputs
-  - [ ] Return updated profile
-  - [ ] Return 200 OK
+- [x] **Update User Profile**
+  - [x] PUT `/api/users/profile` endpoint
+  - [x] Allow updating name only
+  - [x] Prevent email, password, role, physicianId updates
+  - [x] Validate inputs (name length, non-empty)
+  - [x] Return updated profile
+  - [x] Return 200 OK
 
-- [ ] **Change Password**
-  - [ ] POST `/api/users/change-password` endpoint
-  - [ ] Require current password
-  - [ ] Validate new password strength
-  - [ ] Hash new password
-  - [ ] Update user record
-  - [ ] Return 200 OK
+- [x] **Change Password**
+  - [x] POST `/api/users/change-password` endpoint
+  - [x] Require current password verification
+  - [x] Validate new password strength (8+ chars, upper, lower, number, special)
+  - [x] Hash new password with bcrypt (10 salt rounds)
+  - [x] Update user account in database
+  - [x] Return 200 OK
 
-- [ ] **Delete Account**
-  - [ ] DELETE `/api/users/profile` endpoint
-  - [ ] Require password confirmation
-  - [ ] Delete all associated devices
-  - [ ] Delete all associated measurements
-  - [ ] Return 204 No Content
+- [x] **Delete Account**
+  - [x] DELETE `/api/users/profile` endpoint
+  - [x] Require password confirmation
+  - [x] Delete all associated devices
+  - [x] Delete all associated measurements
+  - [x] Delete all sessions and API keys
+  - [x] Delete user account from database
+  - [x] Return 200 OK with deletion stats
+
+- [x] **Physician Association**
+  - [x] PUT `/api/users/physician` endpoint
+  - [x] Allow associating/disassociating physician
+  - [x] Validate physicianId input
+  - [x] Return 200 OK
 
 ### Phase 8: Physician Portal (ECE 513 Only)
 
@@ -405,57 +428,57 @@ This project contains the Node.js/Express backend server that provides RESTful A
   - [ ] Identify bottlenecks
   - [ ] Optimize slow queries
 
-### Phase 12: Security & Error Handling
+### Phase 12: Security & Error Handling ✅
 
-- [ ] **Security Middleware**
-  - [ ] Implement helmet for HTTP headers
-  - [ ] Configure CORS properly
-  - [ ] Add rate limiting (express-rate-limit)
-  - [ ] Implement input sanitization
-  - [ ] Add SQL injection prevention (Mongoose handles)
-  - [ ] Add XSS protection
+- [x] **Security Middleware**
+  - [x] Implement helmet for HTTP headers
+  - [x] Configure CORS properly (allowed origins from env)
+  - [x] Add rate limiting (express-rate-limit: 100 req/15min)
+  - [x] Implement input sanitization (via Mongoose)
+  - [x] Add SQL injection prevention (Mongoose handles)
+  - [x] Add XSS protection (helmet)
 
-- [ ] **Error Handling**
-  - [ ] Create global error handler middleware
-  - [ ] Handle MongoDB errors gracefully
-  - [ ] Handle validation errors
-  - [ ] Log errors to file/service
-  - [ ] Return consistent error format
-  - [ ] Don't leak sensitive info in errors
+- [x] **Error Handling**
+  - [x] Create global error handler middleware
+  - [x] Handle MongoDB errors gracefully
+  - [x] Handle validation errors
+  - [x] Log errors to console (development mode)
+  - [x] Return consistent error format (success/error/code)
+  - [x] Don't leak sensitive info in errors
 
-- [ ] **Request Validation**
-  - [ ] Validate all POST/PUT request bodies
-  - [ ] Sanitize user inputs
-  - [ ] Check parameter types
-  - [ ] Enforce max request size
-  - [ ] Validate date formats
+- [x] **Request Validation**
+  - [x] Validate all POST/PUT request bodies (Mongoose schemas)
+  - [x] Sanitize user inputs
+  - [x] Check parameter types (TypeScript + Mongoose)
+  - [x] Enforce max request size (10mb limit)
+  - [x] Validate date formats
 
-- [ ] **API Key Security**
-  - [ ] Generate cryptographically secure API keys
-  - [ ] Hash API keys in database (optional)
-  - [ ] Implement API key rotation
-  - [ ] Rate limit API key requests
+- [x] **API Key Security**
+  - [x] Generate cryptographically secure API keys (crypto.randomBytes)
+  - [ ] Hash API keys in database (optional - currently stored plain)
+  - [ ] Implement API key rotation (manual)
+  - [x] Rate limit API key requests (global rate limiter)
 
-### Phase 13: Logging & Monitoring
+### Phase 13: Logging & Monitoring ✅
 
-- [ ] **Request Logging**
-  - [ ] Install morgan middleware
-  - [ ] Log all HTTP requests
-  - [ ] Log request method, URL, status, response time
-  - [ ] Separate access logs and error logs
-  - [ ] Implement log rotation
+- [x] **Request Logging**
+  - [x] Install morgan middleware
+  - [x] Log all HTTP requests
+  - [x] Log request method, URL, status, response time
+  - [x] Use 'dev' format in development, 'combined' in production
+  - [ ] Implement log rotation (to file)
 
-- [ ] **Application Logging**
-  - [ ] Create custom logger (winston or bunyan)
-  - [ ] Log important events (user registration, device added)
-  - [ ] Log errors with stack traces
-  - [ ] Log security events (failed logins)
-  - [ ] Configure log levels (dev vs production)
+- [x] **Application Logging**
+  - [x] Use console logging (development)
+  - [x] Log important events (device registration, measurements)
+  - [x] Log errors with stack traces
+  - [x] Log security events (auth failures via Better Auth)
+  - [x] Configure log levels (dev vs production)
 
-- [ ] **Database Monitoring**
-  - [ ] Log slow queries
-  - [ ] Monitor connection pool
-  - [ ] Track database errors
+- [x] **Database Monitoring**
+  - [x] Log database connection status
+  - [x] Monitor connection pool (Mongoose default)
+  - [x] Track database errors
   - [ ] Set up alerts for issues (optional)
 
 ### Phase 14: Deployment & DevOps
@@ -489,36 +512,37 @@ This project contains the Node.js/Express backend server that provides RESTful A
   - [ ] Run tests on pull requests
   - [ ] Automate deployment (optional)
 
-### Phase 15: Documentation
+### Phase 15: Documentation ✅
 
-- [ ] **API Documentation**
-  - [ ] Document all endpoints in README
-  - [ ] Include request/response examples
-  - [ ] Document authentication requirements
-  - [ ] List all HTTP status codes
-  - [ ] Provide example curl commands
+- [x] **API Documentation**
+  - [x] Document all endpoints in docs/API.md
+  - [x] Include request/response examples
+  - [x] Document authentication requirements
+  - [x] List all HTTP status codes
+  - [x] Provide example curl commands
   - [ ] Consider using Swagger/OpenAPI (optional)
 
-- [ ] **Code Documentation**
-  - [ ] Add JSDoc comments to functions
-  - [ ] Document model schemas
-  - [ ] Explain middleware functions
-  - [ ] Document environment variables
-  - [ ] Add inline comments for complex logic
+- [x] **Code Documentation**
+  - [x] Add TypeScript type definitions
+  - [x] Document model schemas with TypeScript interfaces
+  - [x] Explain middleware functions
+  - [x] Document environment variables (.env.example)
+  - [x] Add inline comments for complex logic
 
-- [ ] **Setup Guide**
-  - [ ] Write step-by-step installation guide
-  - [ ] Document prerequisites
-  - [ ] Explain configuration options
-  - [ ] Provide troubleshooting tips
-  - [ ] Include database setup instructions
+- [x] **Setup Guide**
+  - [x] Write step-by-step installation guide (docs/GETTING_STARTED.md)
+  - [x] Document prerequisites
+  - [x] Explain configuration options
+  - [x] Provide troubleshooting tips
+  - [x] Include database setup instructions (MongoDB Atlas)
 
-- [ ] **Architecture Documentation**
-  - [ ] Create system architecture diagram
-  - [ ] Document data flow
-  - [ ] Explain authentication flow
-  - [ ] Document database schema
-  - [ ] Describe error handling strategy
+- [x] **Architecture Documentation**
+  - [x] Create system architecture diagram (in README and docs/PROJECT_STATUS.md)
+  - [x] Document data flow
+  - [x] Explain authentication flow (docs/PROJECT_STATUS.md)
+  - [x] Document database schema (README and CLAUDE.md)
+  - [x] Create CLAUDE.md for AI assistance and future reference
+  - [x] Describe error handling strategy (CLAUDE.md)
 
 ## File Structure
 
