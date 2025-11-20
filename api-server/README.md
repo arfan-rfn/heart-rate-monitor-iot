@@ -4,6 +4,79 @@
 
 This project contains the Node.js/Express backend server that provides RESTful API endpoints for the Heart Track application. It manages user authentication, device registration, health data storage in MongoDB, and serves as the bridge between IoT devices and the web frontend.
 
+## 📊 Implementation Status Summary (2025-11-19)
+
+### ✅ ECE 413 Core Requirements: COMPLETE (100%)
+All 13 mandatory core requirements are fully implemented and functional:
+- ✅ Node.js + Express + MongoDB server
+- ✅ RESTful APIs with proper HTTP status codes
+- ✅ Token-based authentication (Better Auth with JWT)
+- ✅ API key authentication for IoT devices
+- ✅ Account creation and management
+- ✅ Device registration and management
+- ✅ Measurement submission and retrieval
+- ✅ Weekly summary and daily detail views
+- ✅ Configurable time ranges and measurement frequency
+
+### ⚠️ ECE 513 Additional Requirements: PARTIAL (50%)
+**Graduate students must complete the following:**
+- ❌ **HTTPS Implementation (3 points)** - NOT STARTED
+  - Server currently runs HTTP only on port 3000/4000
+  - Need SSL certificates and HTTPS configuration
+- ⚠️ **Physician Portal** - INFRASTRUCTURE READY, ENDPOINTS MISSING
+  - ✅ Database supports physician role and patient associations
+  - ✅ Role-based middleware implemented
+  - ❌ Missing dedicated physician endpoints (0 of 4 implemented)
+  - ❌ Missing physician registration endpoint
+
+### ❌ Extra Credit: NOT IMPLEMENTED (0%)
+- ❌ AI Health Assistant with RAG (+5 points)
+- ❌ Milestone submission (+3 points, deadline passed)
+
+---
+
+## 🎓 For ECE 513 Graduate Students
+
+### Critical Missing Requirements (MUST IMPLEMENT)
+
+**You are currently missing 3 points from HTTPS and partial physician portal implementation.**
+
+#### 1. HTTPS Implementation (3 points) - **HIGH PRIORITY**
+Currently the server runs on HTTP only. You must:
+- Obtain SSL certificates (Let's Encrypt recommended)
+- Modify `server.ts` to use `https` module
+- Configure Express for HTTPS on port 443
+- Set up HTTP → HTTPS redirect on port 80
+- Update `.env` with certificate paths
+
+**Files to modify:**
+- `server.ts` - Add HTTPS configuration
+- `.env` - Add `SSL_CERT_PATH` and `SSL_KEY_PATH`
+
+#### 2. Physician Portal Endpoints (Required) - **MEDIUM PRIORITY**
+Infrastructure is ready, but you need to create physician-specific endpoints:
+
+**Missing endpoints:**
+1. `POST /api/auth/sign-up/physician` - Physician registration
+2. `GET /api/physicians/patients` - List all patients with 7-day summaries
+3. `GET /api/physicians/patients/:id/summary` - Individual patient weekly view
+4. `GET /api/physicians/patients/:id/daily/:date` - Patient daily measurements
+5. `PUT /api/physicians/patients/:id/config` - Adjust patient device settings
+
+**Implementation approach:**
+- Create `src/routes/physicians/` directory
+- Create `routes.ts`, `controller.ts`, `index.ts` files
+- Use existing `requirePhysician` middleware from `src/middleware/role/index.ts`
+- Reuse measurement aggregation logic from `src/routes/measurements/controller.ts`
+- Mount routes in `src/app.ts`: `app.use('/api/physicians', physicianRoutes)`
+
+**Reference files:**
+- `src/routes/measurements/controller.ts` - For aggregation logic
+- `src/middleware/role/index.ts` - For `requirePhysician` middleware
+- `src/routes/devices/controller.ts` - For ownership verification patterns
+
+---
+
 ## ⚠️ Recent Updates (2025-11-19)
 
 ### Better Auth Integration ✅
@@ -73,8 +146,8 @@ This project contains the Node.js/Express backend server that provides RESTful A
 13. ✅ **Configurable Frequency:** Default 30 minutes - **MANDATORY** (Implemented)
 
 ### ECE 513 Additional Requirements - **MANDATORY for graduate students**
-14. ❌ **HTTPS:** Server must use HTTPS with SSL certificates - **MANDATORY for 513** (NOT implemented)
-15. ⚠️ **Physician Portal:** Separate registration, patient management - **MANDATORY for 513** (Partially implemented)
+14. ❌ **HTTPS:** Server must use HTTPS with SSL certificates - **MANDATORY for 513** (NOT implemented - HTTP only)
+15. ⚠️ **Physician Portal:** Separate registration, patient management - **MANDATORY for 513** (Partially implemented - see details below)
 
 ### Extra Credit Opportunities
 16. ❌ **AI Health Assistant:** RAG with local LLM (+5 points) - **Optional** (NOT implemented)
@@ -83,20 +156,20 @@ This project contains the Node.js/Express backend server that provides RESTful A
 ### Grading Rubric Checklist (From PDF Page 7-8)
 
 #### Backend Requirements (ECE 413: 35 points, ECE 513: 35 points)
-- [x] **#1: AWS running (1 pt)** - Server successfully running on AWS/localhost
-- [x] **#6: Strong password (ECE413: 3pts, ECE513: 2pts)** - Salted hash with bcrypt
-- [x] **#7: Device registration (1 pt)** - Able to register device
-- [x] **#8: Reading Data (1 pt)** - Sensor data endpoints
-- [x] **#9: Periodic reading every 30 mins (2 pts)** - Default config + configurable
-- [x] **#10: README file (2 pts)** - How to run project, endpoint docs, credentials
-- [x] **#11: Git Repo (2 pts)** - Well-described README.md in Markdown
-- [x] **#13: Coding style (2 pts)** - Commented code
-- [ ] **#17: Store data in device (ECE413: 3pts, ECE513: 2pts)** - Local storage up to 24 hours (IoT device feature, not API server)
-- [x] **#19: Localhost running (1 pt)** - Evidence of code running locally
-- [ ] **#20: HTTPS implementation (ECE513: 3pts)** - **MANDATORY for 513** - NOT implemented ❌
-- [x] **#21: Project Documentation (5 pts)** - In progress (see docs/)
-- [ ] **#22: Extra Credit LLM Assistant (5 pts)** - NOT implemented
-- [ ] **#23: Extra credit Milestone (3 pts)** - Deadline passed
+- [x] **#1: AWS running (1 pt)** - Server successfully running on localhost (ready for AWS deployment)
+- [x] **#6: Strong password (ECE413: 3pts, ECE513: 2pts)** - ✅ Salted hash with bcrypt (10 salt rounds)
+- [x] **#7: Device registration (1 pt)** - ✅ Able to register device via POST /api/devices
+- [x] **#8: Reading Data (1 pt)** - ✅ Sensor data endpoints implemented
+- [x] **#9: Periodic reading every 30 mins (2 pts)** - ✅ Default config (1800s) + user configurable
+- [x] **#10: README file (2 pts)** - ✅ Complete with setup instructions, endpoint docs, examples
+- [x] **#11: Git Repo (2 pts)** - ✅ Well-documented README.md with comprehensive TODO list
+- [x] **#13: Coding style (2 pts)** - ✅ TypeScript with comments, proper structure
+- [ ] **#17: Store data in device (ECE413: 3pts, ECE513: 2pts)** - N/A for API server (IoT device feature)
+- [x] **#19: Localhost running (1 pt)** - ✅ Evidence of code running locally on port 3000/4000
+- [ ] **#20: HTTPS implementation (ECE513: 3pts)** - ❌ **MANDATORY for 513** - NOT implemented (HTTP only)
+- [x] **#21: Project Documentation (5 pts)** - ✅ Comprehensive docs in /docs directory
+- [ ] **#22: Extra Credit LLM Assistant (5 pts)** - ❌ NOT implemented
+- [ ] **#23: Extra credit Milestone (3 pts)** - ❌ Deadline passed (Nov 21)
 
 ## TODO List & Project Requirements Tracker
 
@@ -413,34 +486,36 @@ This project contains the Node.js/Express backend server that provides RESTful A
 
 ### Phase 8: 🎓 ECE 513 Physician Portal - **Required for ECE 513 students**
 
-> **Status:** ⚠️ Partially implemented (user model supports physicians, but dedicated endpoints missing)
+> **Status:** ⚠️ Partially implemented (infrastructure ready, but physician-specific endpoints missing)
+
+**What's Implemented:**
+- ✅ Database schema supports `role='physician'` via Better Auth
+- ✅ Role-based middleware (`requirePhysician`, `requireUserOrPhysician`) in `src/middleware/role/index.ts`
+- ✅ Patient-physician association via `PUT /api/users/physician` endpoint
+- ✅ Users can associate with a physician using `physicianId` field
+- ✅ User model includes `physicianId` and `role` fields
+
+**What's Missing (REQUIRED for ECE 513):**
 
 - [ ] **Physician Registration** - **Required for 513**
-  - [ ] POST `/api/physicians/register` or `/api/auth/register/physician` endpoint
-  - [ ] Separate registration page/endpoint from regular users
-  - [ ] Assign 'physician' role automatically
+  - [ ] POST `/api/physicians/register` or `/api/auth/sign-up/physician` endpoint
+  - [ ] Separate registration flow from regular users
+  - [ ] Automatically assign 'physician' role
   - [ ] Add physician-specific fields (specialty, license number, etc.)
   - [ ] Return 201 Created
-  - [x] Database schema already supports role='physician' via Better Auth
-
-- [x] **Patient-Physician Association** - **Required for 513**
-  - [x] Implemented via PUT `/api/users/physician` endpoint ✅
-  - [x] Users can select/update their physician
-  - [x] Updates user's physicianId field
-  - [x] Return 200 OK
 
 - [ ] **Physician Portal: All-Patient View** - **Required for 513**
   - [ ] GET `/api/physicians/patients` endpoint
-  - [ ] Require physician role authentication
-  - [ ] List all patients by name with their 7-day stats - **Required for 513**
+  - [ ] Require physician role authentication (use `requirePhysician` middleware)
+  - [ ] List all patients by name with their 7-day stats - **Required by spec**
   - [ ] Show average, maximum, minimum heart rate for each patient
   - [ ] Return 200 OK
 
 - [ ] **Physician Portal: Patient Summary View** - **Required for 513**
   - [ ] GET `/api/physicians/patients/:patientId/summary` endpoint
-  - [ ] Verify patient belongs to physician (physicianId check)
+  - [ ] Verify patient belongs to physician (check `physicianId` field)
   - [ ] Similar to weekly summary view for user
-  - [ ] Include controls for adjusting measurement frequency - **Required for 513**
+  - [ ] Include controls for adjusting measurement frequency - **Required by spec**
   - [ ] Return 200 OK
 
 - [ ] **Physician Portal: Patient Detailed Daily View** - **Required for 513**
@@ -456,10 +531,11 @@ This project contains the Node.js/Express backend server that provides RESTful A
   - [ ] Update patient's device configuration
   - [ ] Return 200 OK
 
-- [ ] **Role-Based Access Control Middleware**
-  - [ ] Create middleware to verify physician role
-  - [ ] Verify physician-patient relationships
-  - [ ] Return 403 Forbidden for unauthorized access
+**Implementation Notes:**
+- All necessary infrastructure is in place (role middleware, database fields)
+- Need to create `/api/physicians` routes file
+- Can reuse existing measurement aggregation logic for patient views
+- Use `requirePhysician` middleware from `src/middleware/role/index.ts`
 
 ### Phase 9: 🎓 ECE 513 HTTPS Implementation - **MANDATORY for ECE 513**
 
@@ -1417,4 +1493,6 @@ pm2 stop hearttrack-api
 
 ---
 
-**Last Updated:** 2025-10-20
+**Last Updated:** 2025-11-19
+
+**Status:** ECE 413 requirements complete. ECE 513 students must implement HTTPS (3 pts) and complete physician portal endpoints.
