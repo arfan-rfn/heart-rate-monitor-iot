@@ -1,0 +1,13 @@
+{
+  "event": "mongodb_measurement",
+  "url": "https://iot-production-6ff3.up.railway.app/api/measurements",
+  "requestType": "POST",
+  "noDefaults": true,
+  "rejectUnauthorized": true,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{{PARTICLE_EVENT_VALUE}}",
+  "mydevices": true,
+  "responseTemplate": "{{success}}"
+}

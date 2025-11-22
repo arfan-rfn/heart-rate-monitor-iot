@@ -1,0 +1,5 @@
+{
+    "particle.targetPlatform": "p2",
+    "particle.firmwareVersion": "6.3.4",
+    "particle.targetDevice": "Photon_HRM"
+}

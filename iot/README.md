@@ -21,7 +21,7 @@ VIN  → 3.3V
 GND  → GND
 SDA  → D0 (I2C Data)
 SCL  → D1 (I2C Clock)
-INT  → D2 (Interrupt, optional)
+INT  → D2 (Interrupt, optional, not used)
 ```
 
 ## Software Architecture
@@ -70,24 +70,24 @@ The firmware implements a synchronous state machine with the following states:
 
 ### Phase 1: Hardware Setup & Basic Sensor Integration ✓ (Milestone)
 
-- [ ] **Hardware Assembly**
-  - [ ] Connect MAX30102 sensor to Particle Photon breadboard
-  - [ ] Verify I2C connections (SDA, SCL)
-  - [ ] Test power supply (3.3V)
-  - [ ] Confirm LED functionality on Photon
+- [X] **Hardware Assembly**
+  - [X] Connect MAX30102 sensor to Particle Photon breadboard
+  - [X] Verify I2C connections (SDA, SCL)
+  - [X] Test power supply (3.3V)
+  - [X] Confirm LED functionality on Photon
 
-- [ ] **Development Environment Setup**
-  - [ ] Install Particle CLI or configure Particle Web IDE
-  - [ ] Create new Particle project
-  - [ ] Configure device Wi-Fi credentials
+- [X] **Development Environment Setup**
+  - [X] Install Particle CLI or configure Particle Web IDE
+  - [X] Create new Particle project
+  - [X] Configure device Wi-Fi credentials
   - [ ] Flash test program to verify device connectivity
 
-- [ ] **Sensor Library Integration**
-  - [ ] Install MAX30102 library (SparkFun or equivalent)
-  - [ ] Verify I2C communication with sensor
-  - [ ] Read sensor ID to confirm connection
-  - [ ] Test basic heart rate reading
-  - [ ] Test basic SpO2 reading
+- [X] **Sensor Library Integration**
+  - [X] Install MAX30102 library (SparkFun or equivalent)
+  - [X] Verify I2C communication with sensor
+  - [X] Read sensor ID to confirm connection
+  - [X] Test basic heart rate reading
+  - [X] Test basic SpO2 reading
 
 - [ ] **Fixed Schedule Implementation (Milestone)**
   - [ ] Implement simple 30-minute timer

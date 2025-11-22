@@ -1,0 +1,18 @@
+{
+  "event": "mongodb_measurement",
+  "url": "mongodb+srv://jpdean_db_user:TTyH1iH6AuD93he8@hearttrack.cifxfez.mongodb.net/?retryWrites=true&w=majority",
+  "requestType": "POST",
+  "noDefaults": true,
+  "rejectUnauthorized": true,
+  "headers": {
+    "Content-Type": "application/json",
+    "api-key": "YOUR-MONGODB-API-KEY"
+  },
+  "json": {
+    "dataSource": "{{PARTICLE_PUBLISHED_AT}}",
+    "database": "heart_track_db",
+    "collection": "measurements",
+    "document": "{{PARTICLE_EVENT_VALUE}}"
+  },
+  "mydevices": true
+}
