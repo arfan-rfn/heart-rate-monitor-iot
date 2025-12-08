@@ -37,16 +37,19 @@ export function HeroSection() {
               {/* CTA Buttons */}
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
                 <Link
-                  href="/dashboard"
+                  href="/auth/sign-up"
                   className={cn(buttonVariants({ size: "lg" }), "font-medium")}
                 >
-                  View Dashboard
+                  Get Started
                 </Link>
                 <Link
-                  href="/auth/sign-up"
-                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "font-medium")}
+                  href="https://github.com/arfan-rfn/heart-rate-monitor-iot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "font-medium gap-2")}
                 >
-                  Get Started
+                  <Icons.GitHub className="h-5 w-5" />
+                  GitHub
                 </Link>
               </div>
 

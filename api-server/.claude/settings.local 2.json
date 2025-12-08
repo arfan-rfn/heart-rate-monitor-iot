@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(test:*)",
+      "Read(//Users/rfnmac/Desktop/course-works/ECE-513/heart-rate-monitor-iot/**)",
+      "Bash(cat:*)",
+      "WebFetch(domain:www.better-auth.com)",
+      "WebSearch",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(node test-api.js:*)",
+      "Bash(node test-user-management.js:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(tree:*)",
+      "Bash(npm run generate-openapi:*)",
+      "Bash(node test-api-key.js:*)",
+      "Bash(./test-account-api-key-manual.sh:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

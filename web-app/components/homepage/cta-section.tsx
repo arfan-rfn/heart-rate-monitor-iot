@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
+import { Icons } from "@/components/icons"
 import { cn } from "@/lib/utils"
 
 export function CTASection() {
@@ -24,6 +25,15 @@ export function CTASection() {
               className={cn(buttonVariants({ variant: "outline", size: "lg" }), "font-medium")}
             >
               View Demo
+            </Link>
+            <Link
+              href="https://github.com/arfan-rfn/heart-rate-monitor-iot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "font-medium gap-2")}
+            >
+              <Icons.GitHub className="h-5 w-5" />
+              View on GitHub
             </Link>
           </div>
 

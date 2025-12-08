@@ -4,6 +4,7 @@ import { siteConfig } from "@/config/site"
 import {
   HeroSection,
   FeaturesSection,
+  TechStackSection,
   TeamSection,
   CTASection,
 } from "@/components/homepage"
@@ -27,6 +28,7 @@ export default function IndexPage() {
       <main className="flex-1">
         <HeroSection />
         <FeaturesSection />
+        <TechStackSection />
         <TeamSection />
         <CTASection />
       </main>

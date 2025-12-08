@@ -104,13 +104,13 @@ export const siteConfig = {
   // Team Members (Customizable)
   teamMembers: [
     {
-      name: "Team Member 1",
-      email: "member1@example.edu",
-      role: "IoT Device & Firmware Developer",
-      photo: "/team/member1.jpg",
-      bio: "Responsible for Particle Photon firmware development, state machine implementation, and MAX30102 sensor integration.",
-      github: "https://github.com/member1",
-      linkedin: "https://linkedin.com/in/member1",
+      name: "Md Arfan Uddin",
+      email: "arfan@arizona.edu",
+      role: "Full Stack Developer",
+      photo: "/team/arfan-uddin.jpg",
+      bio: "Designed and implemented the entire PulseConnect web application, including the frontend (Next.js, React, Tailwind CSS, shadcn/ui), backend API (Node.js, Hono/Express, MongoDB), authentication (Better Auth), real-time device syncing, data modeling, deployment, and overall system architecture.",
+      github: "https://github.com/arfan.rfn",
+      linkedin: "https://linkedin.com/in/rfn",
     },
     {
       name: "Team Member 2",
