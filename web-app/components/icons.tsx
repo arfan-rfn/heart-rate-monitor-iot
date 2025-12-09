@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Circle,
   Clipboard,
+  Code,
   Home,
   Laptop,
   Loader2,
@@ -52,6 +53,7 @@ import {
   ArrowRight,
   Github,
   Linkedin,
+  Terminal,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -109,6 +111,8 @@ export const Icons = {
   TrendingUp: TrendingUp,
   ArrowRight: ArrowRight,
   LinkedIn: Linkedin,
+  Code: Code,
+  Terminal: Terminal,
   Logo: (props: LucideProps) => {
     const height = props.height as unknown as number || props.size as unknown as number || 24;
     const width = props.width as unknown as number || props.size as unknown as number || 24;

@@ -38,7 +38,7 @@ router.delete('/:deviceId', authenticate, validateDeviceOwnership, deleteDevice)
 
 // Get device config (API key OR JWT auth)
 // This endpoint supports both authentication methods
-router.get('/:deviceId/config', async (req, res, next) => {
+router.get('/:deviceId/config', (req, res, next) => {
   const hasApiKey = req.headers['x-api-key'];
 
   if (hasApiKey) {

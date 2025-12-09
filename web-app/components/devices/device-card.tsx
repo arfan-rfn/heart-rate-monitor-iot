@@ -27,6 +27,7 @@ import { deleteDevice, updateDevice } from "@/lib/api/devices"
 import { toast } from "sonner"
 import type { Device, DeviceStatus } from "@/lib/types/device"
 import { DeviceConfigDialog } from "./device-config-dialog"
+import { ApiExamplesDialog } from "./api-examples-dialog"
 
 interface DeviceCardProps {
   device: Device
@@ -36,6 +37,7 @@ export function DeviceCard({ device }: DeviceCardProps) {
   const queryClient = useQueryClient()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showConfigDialog, setShowConfigDialog] = useState(false)
+  const [showApiExamplesDialog, setShowApiExamplesDialog] = useState(false)
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteDevice(device.deviceId),
@@ -111,6 +113,10 @@ export function DeviceCard({ device }: DeviceCardProps) {
                   <DropdownMenuItem onClick={() => setShowConfigDialog(true)}>
                     <Icons.Settings className="size-4 mr-2" />
                     Configure
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowApiExamplesDialog(true)}>
+                    <Icons.Terminal className="size-4 mr-2" />
+                    API Examples
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -198,6 +204,14 @@ export function DeviceCard({ device }: DeviceCardProps) {
         open={showConfigDialog}
         onOpenChange={setShowConfigDialog}
         device={device}
+      />
+
+      {/* API Examples Dialog */}
+      <ApiExamplesDialog
+        open={showApiExamplesDialog}
+        onOpenChange={setShowApiExamplesDialog}
+        deviceId={device.deviceId}
+        deviceName={device.name}
       />
     </>
   )

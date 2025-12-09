@@ -100,8 +100,8 @@ export const authenticateApiKey = async (req: Request, res: Response, next: Next
     }
 
     if (isAccountKey) {
-      // ACCOUNT-LEVEL KEY: deviceId must be in request body or query
-      const deviceId = req.body.deviceId || req.query.deviceId;
+      // ACCOUNT-LEVEL KEY: deviceId must be in request body, query, or params
+      const deviceId = req.body?.deviceId || req.query?.deviceId || req.params?.deviceId;
 
       if (!deviceId) {
         return res.status(400).json({
@@ -181,8 +181,8 @@ export const authenticateApiKey = async (req: Request, res: Response, next: Next
     }
 
     next();
-  } catch (error) {
-    console.error('API key authentication error:', error);
+  } catch (error: any) {
+    console.error('API key authentication error:', error?.message || error);
     return res.status(401).json({
       success: false,
       error: {

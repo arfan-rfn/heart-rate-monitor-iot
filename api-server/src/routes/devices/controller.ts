@@ -140,16 +140,22 @@ export const getDevice = asyncHandler(async (req: Request, res: Response) => {
 export const getDeviceConfig = asyncHandler(async (req: Request, res: Response) => {
   const { deviceId } = req.params;
 
-  // Find device
-  const device = await Device.findOne({ deviceId });
+  // If authenticated via API key, device is already attached by middleware
+  // Otherwise, look up device and verify JWT ownership
+  let device = req.device;
 
   if (!device) {
-    throw new AppError('Device not found', 404, 'DEVICE_NOT_FOUND');
-  }
+    // JWT auth path - look up device
+    device = await Device.findOne({ deviceId });
 
-  // If authenticated via JWT, verify ownership
-  if (req.user && device.userId !== req.user.id) {
-    throw new AppError('Access denied', 403, 'FORBIDDEN');
+    if (!device) {
+      throw new AppError('Device not found', 404, 'DEVICE_NOT_FOUND');
+    }
+
+    // Verify ownership for JWT auth
+    if (req.user && device.userId !== req.user.id) {
+      throw new AppError('Access denied', 403, 'FORBIDDEN');
+    }
   }
 
   res.status(200).json({
