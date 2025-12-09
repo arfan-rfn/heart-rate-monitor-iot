@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { userSchema } from '../auth';
-import { passwordSchema } from '../common';
+import { userSchema } from '../auth/index.js';
+import { passwordSchema } from '../common/index.js';
 
 // Update profile request
 export const updateProfileRequestSchema = z.object({

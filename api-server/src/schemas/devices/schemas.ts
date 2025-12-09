@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { deviceIdSchema, apiKeySchema, timestampSchema, mongoIdSchema } from '../common';
+import { deviceIdSchema, apiKeySchema, timestampSchema, mongoIdSchema } from '../common/index.js';
 
 // Device configuration schema
 export const deviceConfigSchema = z.object({

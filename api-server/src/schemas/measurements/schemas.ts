@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { deviceIdSchema, timestampSchema, paginationSchema } from '../common';
+import { deviceIdSchema, timestampSchema, paginationSchema } from '../common/index.js';
 
 // Measurement quality enum
 export const measurementQualitySchema = z.enum(['good', 'fair', 'poor']).openapi({
@@ -59,11 +59,11 @@ export const getMeasurementsQuerySchema = z.object({
     description: 'End date in YYYY-MM-DD format'
   }),
   deviceId: deviceIdSchema.optional(),
-  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(1000)).default('50').openapi({
+  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(1000)).default(50).openapi({
     example: '50',
     description: 'Number of measurements to return (1-1000)'
   }),
-  page: z.string().transform(Number).pipe(z.number().int().min(1)).default('1').openapi({
+  page: z.string().transform(Number).pipe(z.number().int().min(1)).default(1).openapi({
     example: '1',
     description: 'Page number for pagination'
   })
@@ -71,7 +71,7 @@ export const getMeasurementsQuerySchema = z.object({
 
 // Daily aggregates query
 export const dailyAggregatesQuerySchema = z.object({
-  days: z.string().transform(Number).pipe(z.number().int().min(1).max(90)).default('7').openapi({
+  days: z.string().transform(Number).pipe(z.number().int().min(1).max(90)).default(7).openapi({
     example: '7',
     description: 'Number of days to aggregate (1-90)'
   })

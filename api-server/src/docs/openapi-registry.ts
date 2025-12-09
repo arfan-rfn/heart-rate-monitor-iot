@@ -57,7 +57,7 @@ import {
   getPatientHistoryResponseSchema,
   getPatientAllTimeStatsResponseSchema,
   updatePatientDeviceConfigResponseSchema
-} from '../schemas';
+} from '../schemas/index.js';
 
 // Create registry
 export const registry = new OpenAPIRegistry();

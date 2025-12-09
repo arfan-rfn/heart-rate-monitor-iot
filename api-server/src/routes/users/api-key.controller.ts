@@ -209,18 +209,7 @@ export const regenerateAccountApiKey = asyncHandler(async (req: Request, res: Re
     // Delete old key from MongoDB if it exists
     if (accountKey) {
       await apiKeyCollection.deleteOne({ id: accountKey.id });
-
-      // Also revoke via better-auth API (if it supports it)
-      try {
-        await auth.api.revokeApiKey({
-          body: {
-            keyId: accountKey.id,
-          },
-        });
-      } catch (revokeError) {
-        // Ignore revoke errors since we already deleted from DB
-        console.log('Better-auth revoke not needed (key deleted from DB)');
-      }
+      console.log('Old API key deleted from MongoDB');
     }
 
     // Generate new key
@@ -309,18 +298,6 @@ export const revokeAccountApiKey = asyncHandler(async (req: Request, res: Respon
 
     // Delete from MongoDB
     await apiKeyCollection.deleteOne({ id: accountKey.id });
-
-    // Also revoke via better-auth API (if it supports it)
-    try {
-      await auth.api.revokeApiKey({
-        body: {
-          keyId: accountKey.id,
-        },
-      });
-    } catch (revokeError) {
-      // Ignore revoke errors since we already deleted from DB
-      console.log('Better-auth revoke not needed (key deleted from DB)');
-    }
 
     console.log('✓ API key revoked and deleted from MongoDB:', {
       id: accountKey.id,

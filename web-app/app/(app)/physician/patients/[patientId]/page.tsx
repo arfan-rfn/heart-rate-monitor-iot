@@ -69,8 +69,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 This may happen if:
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>The patient has not set you as their physician</li>
-                  <li>The patient's account was deleted</li>
-                  <li>You don't have permission to view this patient</li>
+                  <li>The patient&apos;s account was deleted</li>
+                  <li>You don&apos;t have permission to view this patient</li>
                 </ul>
                 <p className="mt-2">Please return to the patient list and try again.</p>
               </>

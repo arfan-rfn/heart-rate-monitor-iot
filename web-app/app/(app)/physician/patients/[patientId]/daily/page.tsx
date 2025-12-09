@@ -159,7 +159,7 @@ export default function PatientDailyPage({ params }: PatientDailyPageProps) {
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium">No measurements for this date</p>
               <p className="text-sm mt-2">
-                Try selecting a different date or check if the patient's device is active
+                Try selecting a different date or check if the patient&apos;s device is active
               </p>
             </div>
           </CardContent>

@@ -77,13 +77,23 @@ export function PatientListTable({ patients }: PatientListTableProps) {
     })
   }, [patients, statusFilter])
 
+  // Calculate status counts - must be before early return to follow rules of hooks
+  const statusCounts = useMemo(() => {
+    return {
+      all: patients.length,
+      active: patients.filter((p) => p.stats.overview.monitoringStatus === 'active').length,
+      inactive: patients.filter((p) => p.stats.overview.monitoringStatus === 'inactive').length,
+      no_devices: patients.filter((p) => p.stats.overview.monitoringStatus === 'no_devices').length,
+    }
+  }, [patients])
+
   if (patients.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>No Patients Found</CardTitle>
           <CardDescription>
-            You don't have any patients associated with your account yet.
+            You don&apos;t have any patients associated with your account yet.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-8">
@@ -95,16 +105,6 @@ export function PatientListTable({ patients }: PatientListTableProps) {
       </Card>
     )
   }
-
-  // Calculate status counts
-  const statusCounts = useMemo(() => {
-    return {
-      all: patients.length,
-      active: patients.filter((p) => p.stats.overview.monitoringStatus === 'active').length,
-      inactive: patients.filter((p) => p.stats.overview.monitoringStatus === 'inactive').length,
-      no_devices: patients.filter((p) => p.stats.overview.monitoringStatus === 'no_devices').length,
-    }
-  }, [patients])
 
   return (
     <Card>

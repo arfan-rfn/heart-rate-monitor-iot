@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { emailSchema, passwordSchema } from '../common';
+import { emailSchema, passwordSchema } from '../common/index.js';
 
 // Registration request
 export const registerRequestSchema = z.object({
