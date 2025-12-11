@@ -3,11 +3,16 @@
 import { useAuthContext } from "@/components/providers/auth-provider"
 import { authClient } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function SessionDebugPage() {
   const { user, session, isLoading, isAuthenticated, refresh } = useAuthContext()
   const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [cookies, setCookies] = useState<string>("")
+
+  useEffect(() => {
+    setCookies(document.cookie || "No cookies found")
+  }, [])
 
   const checkSession = async () => {
     try {
@@ -71,7 +76,7 @@ export default function SessionDebugPage() {
         <div className="p-4 border rounded-lg">
           <h2 className="text-xl font-semibold mb-3">Cookies</h2>
           <pre className="p-2 bg-muted rounded text-xs overflow-auto">
-            {document.cookie || "No cookies found"}
+            {cookies}
           </pre>
         </div>
       </div>

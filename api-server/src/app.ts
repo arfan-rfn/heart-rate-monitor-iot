@@ -28,15 +28,14 @@ export const createApp = (): Application => {
   // ===== Security Middleware =====
 
   // Helmet: Set security-related HTTP headers
-  // Configure CSP to allow Swagger UI to load properly
-  // Note: For production with HTTPS on IP addresses, we need more permissive CSP
+  // Configure CSP to allow Swagger UI to load properly from CDN
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
           imgSrc: ["'self'", 'data:', 'https:'],
           connectSrc: ["'self'"],
           // Don't upgrade HTTP to HTTPS - important when HTTPS is not configured
@@ -99,21 +98,26 @@ export const createApp = (): Application => {
   });
 
   // Serve Swagger UI
-  app.use(
-    '/api-docs',
-    swaggerUi.serve,
-    swaggerUi.setup(openApiDocument, {
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: 'PulseConnect API Documentation',
-      customfavIcon: '/favicon.ico',
-      swaggerOptions: {
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        filter: true,
-        tryItOutEnabled: true,
-      },
-    })
-  );
+  // Use CDN for static assets to work properly on serverless (Vercel)
+  const swaggerUiOptions = {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'PulseConnect API Documentation',
+    customfavIcon: '/favicon.ico',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      tryItOutEnabled: true,
+    },
+    // Use CDN-hosted Swagger UI assets for serverless compatibility
+    customCssUrl: 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css',
+    customJs: [
+      'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js',
+      'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js',
+    ],
+  };
+
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument, swaggerUiOptions));
 
   // ===== Better Auth Routes =====
   // Mount better-auth routes at /api/auth
