@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import rateLimit from 'express-rate-limit';
 import {
   getUserProfile,
@@ -15,6 +15,14 @@ import {
 } from './api-key.controller.js';
 import { authenticate } from '../../middleware/auth/index.js';
 
+// Extend Request type to include user property from authentication
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    [key: string]: unknown;
+  };
+}
+
 /**
  * Strict rate limiter for sensitive API key operations
  * Prevents abuse of key generation/regeneration
@@ -26,11 +34,12 @@ const apiKeyRateLimiter = rateLimit({
   message: 'Too many API key requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'development', // Skip rate limiting in dev mode
+  skip: (_req: Request) => process.env.NODE_ENV === 'development', // Skip rate limiting in dev mode
   // Use user ID for rate limiting (users must be authenticated)
-  keyGenerator: (req) => {
+  keyGenerator: (req: Request) => {
     // API key endpoints require authentication, so user.id should always exist
-    return req.user?.id || 'unauthenticated';
+    const authReq = req as AuthenticatedRequest;
+    return authReq.user?.id || 'unauthenticated';
   },
   // Explicitly validate that we're not using IP addresses for rate limiting
   validate: {
