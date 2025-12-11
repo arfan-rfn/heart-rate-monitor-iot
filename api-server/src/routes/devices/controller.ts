@@ -133,6 +133,47 @@ export const getDevice = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
+ * Calculate UTC offset in hours for a given IANA timezone
+ * Returns the current offset including DST adjustments
+ */
+function getTimezoneOffset(timezone: string): number {
+  try {
+    // Create a date formatter for the target timezone
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    });
+
+    // Parse the offset from the formatted string (e.g., "GMT-7" or "GMT+5:30")
+    const parts = formatter.formatToParts(now);
+    const tzPart = parts.find(p => p.type === 'timeZoneName');
+
+    if (tzPart) {
+      const offsetStr = tzPart.value; // e.g., "GMT-7", "GMT+5:30"
+      const match = offsetStr.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+
+      if (match) {
+        const sign = match[1] === '+' ? 1 : -1;
+        const hours = parseInt(match[2], 10);
+        const minutes = match[3] ? parseInt(match[3], 10) : 0;
+        return sign * (hours + minutes / 60);
+      }
+    }
+
+    // Fallback: calculate offset by comparing UTC and local times
+    const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const tzDate = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    const diffMs = tzDate.getTime() - utcDate.getTime();
+    return diffMs / (1000 * 60 * 60); // Convert to hours
+  } catch (error) {
+    // Default to UTC if timezone is invalid
+    console.warn(`Invalid timezone "${timezone}", defaulting to UTC`);
+    return 0;
+  }
+}
+
+/**
  * Get device configuration
  * GET /api/devices/:deviceId/config
  * Requires: API key OR JWT authentication
@@ -158,10 +199,17 @@ export const getDeviceConfig = asyncHandler(async (req: Request, res: Response) 
     }
   }
 
+  // Calculate the current UTC offset for the device's timezone
+  // This accounts for DST automatically
+  const timezoneOffset = getTimezoneOffset(device.config.timezone || 'America/New_York');
+
   res.status(200).json({
     success: true,
     data: {
-      config: device.config,
+      config: {
+        ...device.config,
+        timezoneOffset, // UTC offset in hours (e.g., -7 for MST, -4 for EDT)
+      },
     },
   });
 });

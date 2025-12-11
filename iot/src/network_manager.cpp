@@ -39,21 +39,35 @@ void NetworkManager::begin() {
         Serial.println("Endpoints:");
         Serial.printlnf("  POST http://%s:%d/api/measurements", API_SERVER_HOST, API_SERVER_PORT);
         Serial.printlnf("  GET  http://%s:%d/api/devices/{id}/config", API_SERVER_HOST, API_SERVER_PORT);
+        
+        // Report any stored measurements from EEPROM
+        int untransmitted = getUntransmittedCount();
+        if (untransmitted > 0) {
+            Serial.printlnf("  %d stored measurements pending sync", untransmitted);
+        }
     }
     
-    // Fetch config shortly after boot
-    lastConfigFetch = millis() - CONFIG_FETCH_INTERVAL_MS + 5000;
+    // Initialize lastConfigFetch to current time
+    // Config is fetched explicitly in setup() on boot
+    lastConfigFetch = millis();
 }
 
 void NetworkManager::update() {
     unsigned long now = millis();
+    bool wasConnected = wifiConnected;
     
     if (now - lastConnectionCheck > 5000) {
         wifiConnected = WiFi.ready();
         lastConnectionCheck = now;
         
-        // Sync stored measurements when connected
-        if (wifiConnected && storedCount > 0) {
+        // Detect WiFi reconnection
+        if (wifiConnected && !wasConnected) {
+            if (DEBUG_MODE) Serial.println("WiFi reconnected - will sync stored measurements");
+        }
+        
+        // Sync stored measurements when connected (one at a time to avoid blocking)
+        int untransmitted = getUntransmittedCount();
+        if (wifiConnected && untransmitted > 0) {
             syncStoredMeasurements();
         }
     }
@@ -86,25 +100,30 @@ bool NetworkManager::transmitMeasurement(MeasurementData data) {
         Serial.println(payload);
     }
     
-    bool success = postMeasurement(payload);
+    // Iterative retry loop (avoids stack overflow from recursion)
+    bool success = false;
+    int attempts = 0;
+    
+    while (attempts <= MAX_NETWORK_RETRY && !success) {
+        if (attempts > 0) {
+            if (DEBUG_MODE) Serial.printlnf("Retry attempt %d/%d...", attempts, MAX_NETWORK_RETRY);
+            delay(1000 * attempts);  // Exponential backoff: 1s, 2s, 3s
+        }
+        
+        success = postMeasurement(payload);
+        attempts++;
+    }
     
     if (success) {
         ledController.flashSuccess();  // Green flash
         if (DEBUG_MODE) Serial.println("Measurement posted successfully");
     } else {
         ledController.flashError();  // Red flash
-        if (DEBUG_MODE) Serial.println("Failed to post measurement");
-        
-        if (retryCount >= MAX_NETWORK_RETRY) {
-            storeMeasurement(data);
-            retryCount = 0;
-        } else {
-            retryCount++;
-            delay(1000);
-            return transmitMeasurement(data);  // Retry
-        }
+        if (DEBUG_MODE) Serial.println("Failed after all retries - storing locally");
+        storeMeasurement(data);
     }
     
+    retryCount = 0;  // Reset for next transmission
     stateMachine.setState(STATE_IDLE);
     stateMachine.scheduleNextMeasurement();
     return success;
@@ -243,7 +262,15 @@ void NetworkManager::fetchDeviceConfig() {
         return;
     }
     
-    // Skip HTTP headers (find empty line)
+    // Read status line first to check for success
+    String statusLine = httpClient.readStringUntil('\n');
+    bool responseOk = (statusLine.indexOf("200") > 0);
+    
+    if (DEBUG_MODE) {
+        Serial.printlnf("Config response status: %s", statusLine.c_str());
+    }
+    
+    // Skip remaining HTTP headers (find empty line)
     bool headersEnded = false;
     while (httpClient.available() && !headersEnded) {
         String line = httpClient.readStringUntil('\n');
@@ -262,19 +289,45 @@ void NetworkManager::fetchDeviceConfig() {
     configFetchPending = false;
     
     if (DEBUG_MODE) {
-        Serial.println("Config response:");
+        Serial.println("Config response body:");
         Serial.println(jsonBody);
     }
     
-    // Parse and apply configuration
+    // Only process if response was OK
+    if (!responseOk) {
+        if (DEBUG_MODE) Serial.println("Config fetch failed - non-200 response");
+        return;
+    }
+    
+    // Parse and apply configuration from nested JSON structure
+    // API returns: {"success":true,"data":{"config":{...}}}
     if (jsonBody.length() > 0) {
-        int frequency = extractJsonInt(jsonBody, "measurementFrequency");
-        String startTime = extractJsonValue(jsonBody, "activeStartTime");
-        String endTime = extractJsonValue(jsonBody, "activeEndTime");
-        
-        if (frequency > 0 || startTime.length() > 0 || endTime.length() > 0) {
-            stateMachine.applyConfiguration(frequency, startTime, endTime);
-            if (DEBUG_MODE) Serial.println("✓ Configuration applied");
+        // Extract the config object from the nested response
+        int configStart = jsonBody.indexOf("\"config\":");
+        if (configStart > 0) {
+            // Parse values from within the config object
+            int frequency = extractJsonInt(jsonBody, "measurementFrequency");
+            String startTime = extractJsonValue(jsonBody, "activeStartTime");
+            String endTime = extractJsonValue(jsonBody, "activeEndTime");
+            String timezone = extractJsonValue(jsonBody, "timezone");
+            float timezoneOffset = extractJsonFloat(jsonBody, "timezoneOffset");
+            
+            if (DEBUG_MODE) {
+                Serial.println("Parsed config values:");
+                Serial.printlnf("  measurementFrequency: %d seconds", frequency);
+                Serial.printlnf("  activeStartTime: %s", startTime.c_str());
+                Serial.printlnf("  activeEndTime: %s", endTime.c_str());
+                Serial.printlnf("  timezone: %s", timezone.c_str());
+                Serial.printlnf("  timezoneOffset: %.1f hours (UTC%+.1f)", timezoneOffset, timezoneOffset);
+            }
+            
+            if (frequency > 0 || startTime.length() > 0 || endTime.length() > 0 || 
+                (timezoneOffset >= -12.0f && timezoneOffset <= 14.0f)) {
+                stateMachine.applyConfiguration(frequency, startTime, endTime, timezoneOffset);
+                if (DEBUG_MODE) Serial.println("Configuration applied successfully");
+            }
+        } else {
+            if (DEBUG_MODE) Serial.println("Config object not found in response");
         }
     }
 }
@@ -325,28 +378,83 @@ String NetworkManager::createJSON(MeasurementData data) {
 // ==================== Local Storage (EEPROM) ====================
 
 void NetworkManager::storeMeasurement(MeasurementData data) {
+    // First, clean up any measurements older than 24 hours
+    cleanupOldMeasurements();
+    
+    // Find oldest slot or use next available slot
+    int slotToUse = storageIndex;
+    
     if (storedCount >= MAX_STORED_MEASUREMENTS) {
-        if (DEBUG_MODE) Serial.println("Storage full - overwriting oldest");
-        storageIndex = 0;
+        // Find the oldest untransmitted measurement to overwrite
+        uint32_t oldestTime = UINT32_MAX;
+        for (int i = 0; i < MAX_STORED_MEASUREMENTS; i++) {
+            if (!storage[i].transmitted && storage[i].timestamp < oldestTime) {
+                oldestTime = storage[i].timestamp;
+                slotToUse = i;
+            }
+        }
+        if (DEBUG_MODE) Serial.println("Storage full - overwriting oldest measurement");
     }
     
-    storage[storageIndex].heartRate = data.heartRate;
-    storage[storageIndex].spO2 = data.spO2;
-    storage[storageIndex].timestamp = data.timestamp;
-    storage[storageIndex].transmitted = false;
+    storage[slotToUse].heartRate = data.heartRate;
+    storage[slotToUse].spO2 = data.spO2;
+    storage[slotToUse].timestamp = data.timestamp;
+    storage[slotToUse].transmitted = false;
     
-    storageIndex = (storageIndex + 1) % MAX_STORED_MEASUREMENTS;
-    if (storedCount < MAX_STORED_MEASUREMENTS) storedCount++;
+    if (storedCount < MAX_STORED_MEASUREMENTS) {
+        storedCount++;
+        storageIndex = (storageIndex + 1) % MAX_STORED_MEASUREMENTS;
+    }
     
     saveToEEPROM();
     
     if (DEBUG_MODE) {
-        Serial.printlnf("Stored locally (%d/%d)", storedCount, MAX_STORED_MEASUREMENTS);
+        Serial.printlnf("Stored locally (%d/%d)", getUntransmittedCount(), MAX_STORED_MEASUREMENTS);
     }
 }
 
+void NetworkManager::cleanupOldMeasurements() {
+    if (!Time.isValid()) return;
+    
+    uint32_t now = Time.now();
+    uint32_t twentyFourHoursAgo = now - (24 * 60 * 60);  // 24 hours in seconds
+    int cleaned = 0;
+    
+    for (int i = 0; i < MAX_STORED_MEASUREMENTS; i++) {
+        // Mark old measurements as transmitted (effectively removing them)
+        if (!storage[i].transmitted && storage[i].timestamp > 0 && 
+            storage[i].timestamp < twentyFourHoursAgo) {
+            storage[i].transmitted = true;
+            cleaned++;
+        }
+    }
+    
+    if (cleaned > 0) {
+        storedCount -= cleaned;
+        if (storedCount < 0) storedCount = 0;
+        
+        if (DEBUG_MODE) {
+            Serial.printlnf("Cleaned %d measurements older than 24 hours", cleaned);
+        }
+    }
+}
+
+int NetworkManager::getUntransmittedCount() {
+    int count = 0;
+    for (int i = 0; i < MAX_STORED_MEASUREMENTS; i++) {
+        if (!storage[i].transmitted && storage[i].timestamp > 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
 void NetworkManager::syncStoredMeasurements() {
-    if (storedCount == 0) return;
+    // Clean up old measurements first
+    cleanupOldMeasurements();
+    
+    int untransmitted = getUntransmittedCount();
+    if (untransmitted == 0) return;
     
     int index = findNextStoredMeasurement();
     if (index < 0) return;
@@ -363,10 +471,11 @@ void NetworkManager::syncStoredMeasurements() {
     if (postMeasurement(payload)) {
         storage[index].transmitted = true;
         storedCount--;
+        if (storedCount < 0) storedCount = 0;
         saveToEEPROM();
         
         if (DEBUG_MODE) {
-            Serial.printlnf("Synced stored measurement (%d remaining)", storedCount);
+            Serial.printlnf("Synced stored measurement (%d remaining)", getUntransmittedCount());
         }
     }
 }
@@ -451,4 +560,29 @@ int NetworkManager::extractJsonInt(String json, String key) {
     
     String valueStr = json.substring(startIndex, endIndex);
     return valueStr.toInt();
+}
+
+float NetworkManager::extractJsonFloat(String json, String key) {
+    String searchKey = "\"" + key + "\":";
+    int startIndex = json.indexOf(searchKey);
+    
+    if (startIndex < 0) return 0.0f;
+    
+    startIndex += searchKey.length();
+    
+    // Skip any whitespace
+    while (startIndex < (int)json.length() && json.charAt(startIndex) == ' ') {
+        startIndex++;
+    }
+    
+    int endIndex = startIndex;
+    while (endIndex < (int)json.length()) {
+        char c = json.charAt(endIndex);
+        // Allow digits, minus sign, and decimal point
+        if (c == ',' || c == '}' || c == ' ' || c == '\n' || c == '\r') break;
+        endIndex++;
+    }
+    
+    String valueStr = json.substring(startIndex, endIndex);
+    return valueStr.toFloat();
 }

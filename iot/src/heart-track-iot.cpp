@@ -1,3 +1,8 @@
+/******************************************************/
+//       THIS IS A GENERATED FILE - DO NOT EDIT       //
+/******************************************************/
+
+#line 1 "/Users/umbrella_mt_01/Documents/4.ECE513/ECE513CODE/Final_Project/heart-rate-monitor-iot/iot/src/heart-track-iot.ino"
 #include "Particle.h"
 #include "config.h"
 #include "state_machine.h"
@@ -5,6 +10,9 @@
 #include "led_controller.h"
 #include "network_manager.h"
 
+void setup();
+void loop();
+#line 8 "/Users/umbrella_mt_01/Documents/4.ECE513/ECE513CODE/Final_Project/heart-rate-monitor-iot/iot/src/heart-track-iot.ino"
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
 StateMachine stateMachine;

@@ -14,8 +14,8 @@ StateMachine::StateMachine() {
     nextScheduledMeasurement = 0;
     retryCount = 0;
     
-    // Initialize with default configuration
-    setDefaultConfig();
+    // Try to load saved configuration from EEPROM, fall back to defaults
+    loadConfigFromEEPROM();
 }
 
 void StateMachine::setDefaultConfig() {
@@ -24,7 +24,11 @@ void StateMachine::setDefaultConfig() {
     config.activeStartMinute = DEFAULT_START_MINUTE;
     config.activeEndHour = DEFAULT_END_HOUR;
     config.activeEndMinute = DEFAULT_END_MINUTE;
+    config.timezoneOffset = DEFAULT_TIMEZONE_OFFSET;
     config.configValid = false;  // Will be set to true when fetched from server
+    
+    // Apply default timezone
+    applyTimezone(config.timezoneOffset);
     
     if (DEBUG_MODE) {
         Serial.println("Default config loaded:");
@@ -34,6 +38,8 @@ void StateMachine::setDefaultConfig() {
         Serial.printlnf("  Active window: %02d:%02d - %02d:%02d",
                         config.activeStartHour, config.activeStartMinute,
                         config.activeEndHour, config.activeEndMinute);
+        Serial.printlnf("  Timezone offset: %.1f hours (UTC%+.1f)",
+                        config.timezoneOffset, config.timezoneOffset);
     }
 }
 
@@ -74,11 +80,12 @@ void StateMachine::update() {
             lastCountdownUpdate = currentTime;
         }
         
-        if (currentTime >= nextScheduledMeasurement) {
+        // Use subtraction to handle millis() overflow correctly
+        if ((long)(currentTime - nextScheduledMeasurement) >= 0) {
             // Check if we're within the active time window before requesting measurement
             if (!isWithinActiveWindow()) {
                 if (DEBUG_MODE) {
-                    Serial.println("Outside active window - skipping measurement");
+                    Serial.println("Outside active window - waiting for window to open");
                     Serial.printlnf("Active window: %02d:%02d - %02d:%02d",
                                   config.activeStartHour, config.activeStartMinute,
                                   config.activeEndHour, config.activeEndMinute);
@@ -86,8 +93,8 @@ void StateMachine::update() {
                         Serial.printlnf("Current time: %02d:%02d", Time.hour(), Time.minute());
                     }
                 }
-                // Schedule next check and stay in IDLE
-                scheduleNextMeasurement();
+                // Smart scheduling: calculate time until window opens
+                scheduleForWindowOpen();
                 return;
             }
             
@@ -173,6 +180,46 @@ void StateMachine::scheduleNextMeasurement() {
     lastMeasurementTime = millis();
 }
 
+void StateMachine::scheduleForWindowOpen() {
+    // If time isn't valid, fall back to regular interval
+    if (!Time.isValid()) {
+        scheduleNextMeasurement();
+        return;
+    }
+    
+    int currentHour = Time.hour();
+    int currentMinute = Time.minute();
+    int currentTimeMinutes = currentHour * 60 + currentMinute;
+    int startTimeMinutes = config.activeStartHour * 60 + config.activeStartMinute;
+    
+    int minutesUntilOpen;
+    
+    if (currentTimeMinutes < startTimeMinutes) {
+        // Window opens later today
+        minutesUntilOpen = startTimeMinutes - currentTimeMinutes;
+    } else {
+        // Window opens tomorrow (we're after the end time)
+        minutesUntilOpen = (24 * 60) - currentTimeMinutes + startTimeMinutes;
+    }
+    
+    // Convert to milliseconds, add 1 minute buffer
+    unsigned long msUntilOpen = ((unsigned long)minutesUntilOpen + 1) * 60000UL;
+    
+    // Cap at 12 hours to handle edge cases
+    if (msUntilOpen > 12UL * 60UL * 60UL * 1000UL) {
+        msUntilOpen = 12UL * 60UL * 60UL * 1000UL;
+    }
+    
+    nextScheduledMeasurement = millis() + msUntilOpen;
+    lastMeasurementTime = millis();
+    
+    if (DEBUG_MODE) {
+        Serial.printlnf("Scheduled wake-up in %d minutes (at ~%02d:%02d)", 
+                      minutesUntilOpen + 1,
+                      config.activeStartHour, config.activeStartMinute);
+    }
+}
+
 unsigned long StateMachine::getMeasurementInterval() {
     return config.measurementIntervalMs;
 }
@@ -205,10 +252,12 @@ void StateMachine::measurementFailed() {
 }
 
 int StateMachine::getSecondsUntilNextMeasurement() {
-    if (millis() >= nextScheduledMeasurement) {
+    unsigned long now = millis();
+    // Use signed comparison to handle overflow
+    if ((long)(now - nextScheduledMeasurement) >= 0) {
         return 0;
     }
-    return (nextScheduledMeasurement - millis()) / 1000;
+    return (nextScheduledMeasurement - now) / 1000;
 }
 
 void StateMachine::incrementRetryCount() {
@@ -302,7 +351,7 @@ void StateMachine::parseTimeString(String timeStr, int &hour, int &minute) {
     }
 }
 
-void StateMachine::applyConfiguration(int frequencySeconds, String startTime, String endTime) {
+void StateMachine::applyConfiguration(int frequencySeconds, String startTime, String endTime, float timezoneOffset) {
     // Update measurement interval (convert seconds to milliseconds)
     if (frequencySeconds > 0) {
         // Validate: minimum 15 minutes (900s), maximum 4 hours (14400s)
@@ -323,6 +372,14 @@ void StateMachine::applyConfiguration(int frequencySeconds, String startTime, St
         parseTimeString(endTime, config.activeEndHour, config.activeEndMinute);
     }
     
+    // Update timezone offset (valid range: -12 to +14 hours)
+    if (timezoneOffset >= -12.0f && timezoneOffset <= 14.0f) {
+        if (config.timezoneOffset != timezoneOffset) {
+            config.timezoneOffset = timezoneOffset;
+            applyTimezone(timezoneOffset);
+        }
+    }
+    
     // Mark config as valid (received from server)
     config.configValid = true;
     
@@ -331,11 +388,92 @@ void StateMachine::applyConfiguration(int frequencySeconds, String startTime, St
         Serial.printlnf("  Interval: %lu ms (%lu min)", 
                         config.measurementIntervalMs,
                         config.measurementIntervalMs / 60000);
-        Serial.printlnf("  Active window: %02d:%02d - %02d:%02d",
+        Serial.printlnf("  Active window: %02d:%02d - %02d:%02d (local time)",
                         config.activeStartHour, config.activeStartMinute,
                         config.activeEndHour, config.activeEndMinute);
+        Serial.printlnf("  Timezone: UTC%+.1f", config.timezoneOffset);
+        if (Time.isValid()) {
+            Serial.printlnf("  Current local time: %02d:%02d", Time.hour(), Time.minute());
+        }
     }
+    
+    // Save to EEPROM for persistence across reboots
+    saveConfigToEEPROM();
     
     // Reschedule next measurement with new interval
     scheduleNextMeasurement();
+}
+
+void StateMachine::applyTimezone(float offset) {
+    // Particle's Time.zone() accepts offset in hours (float for fractional like India +5.5)
+    Time.zone(offset);
+    
+    if (DEBUG_MODE) {
+        Serial.printlnf("Timezone set to UTC%+.1f", offset);
+        if (Time.isValid()) {
+            Serial.printlnf("Local time now: %s", Time.format("%Y-%m-%d %H:%M:%S").c_str());
+        }
+    }
+}
+
+// ==================== EEPROM Config Persistence ====================
+
+void StateMachine::saveConfigToEEPROM() {
+    int addr = EEPROM_CONFIG_ADDR;
+    
+    // Write marker to indicate valid config
+    EEPROM.put(addr, (uint16_t)EEPROM_CONFIG_VALID_MARKER);
+    addr += sizeof(uint16_t);
+    
+    // Write config struct
+    EEPROM.put(addr, config);
+    
+    if (DEBUG_MODE) {
+        Serial.println("Configuration saved to EEPROM");
+    }
+}
+
+void StateMachine::loadConfigFromEEPROM() {
+    int addr = EEPROM_CONFIG_ADDR;
+    uint16_t marker;
+    
+    EEPROM.get(addr, marker);
+    
+    if (marker == EEPROM_CONFIG_VALID_MARKER) {
+        addr += sizeof(uint16_t);
+        EEPROM.get(addr, config);
+        
+        // Validate loaded values
+        if (config.measurementIntervalMs < 900000 || config.measurementIntervalMs > 14400000) {
+            config.measurementIntervalMs = MEASUREMENT_INTERVAL_MS;
+        }
+        if (config.activeStartHour > 23) config.activeStartHour = DEFAULT_START_HOUR;
+        if (config.activeEndHour > 23) config.activeEndHour = DEFAULT_END_HOUR;
+        if (config.activeStartMinute > 59) config.activeStartMinute = DEFAULT_START_MINUTE;
+        if (config.activeEndMinute > 59) config.activeEndMinute = DEFAULT_END_MINUTE;
+        
+        // Validate timezone offset (valid range: -12 to +14 hours)
+        if (config.timezoneOffset < -12.0f || config.timezoneOffset > 14.0f || isnan(config.timezoneOffset)) {
+            config.timezoneOffset = DEFAULT_TIMEZONE_OFFSET;
+        }
+        
+        // Apply the saved timezone
+        applyTimezone(config.timezoneOffset);
+        
+        if (DEBUG_MODE) {
+            Serial.println("Configuration loaded from EEPROM:");
+            Serial.printlnf("  Interval: %lu ms (%lu min)", 
+                            config.measurementIntervalMs,
+                            config.measurementIntervalMs / 60000);
+            Serial.printlnf("  Active window: %02d:%02d - %02d:%02d (local time)",
+                            config.activeStartHour, config.activeStartMinute,
+                            config.activeEndHour, config.activeEndMinute);
+            Serial.printlnf("  Timezone: UTC%+.1f", config.timezoneOffset);
+        }
+    } else {
+        if (DEBUG_MODE) {
+            Serial.println("No saved configuration found - using defaults");
+        }
+        setDefaultConfig();
+    }
 }

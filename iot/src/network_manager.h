@@ -55,10 +55,13 @@ private:
     void saveToEEPROM();
     void loadFromEEPROM();
     int findNextStoredMeasurement();
+    void cleanupOldMeasurements();
+    int getUntransmittedCount();
     
     // JSON parsing helpers
     String extractJsonValue(String json, String key);
     int extractJsonInt(String json, String key);
+    float extractJsonFloat(String json, String key);
 };
 
 #endif

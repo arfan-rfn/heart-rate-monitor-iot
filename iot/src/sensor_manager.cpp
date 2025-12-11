@@ -14,10 +14,16 @@ SensorManager::SensorManager() {
     bufferFilled = false;
     measuring = false;
     measurementStartTime = 0;
+    validSampleCount = 0;
     
     for (int i = 0; i < 100; i++) {
         irBuffer[i] = 0;
         redBuffer[i] = 0;
+    }
+    
+    for (int i = 0; i < MAX_VALID_SAMPLES; i++) {
+        hrSamples[i] = 0;
+        spo2Samples[i] = 0;
     }
 }
 
@@ -68,28 +74,90 @@ void SensorManager::update() {
     updateBuffer();
     calculateMetrics();
     
+    // Check if this reading is valid
     if (validHeartRate && validSPO2) {
-        currentMeasurement.heartRate = heartRate;
-        currentMeasurement.spO2 = spo2;
-        currentMeasurement.timestamp = Time.now();
-        currentMeasurement.valid = validateMeasurement();
-        currentMeasurement.confidence = 0.95;
+        bool hrValid = (heartRate >= MIN_HEART_RATE && heartRate <= MAX_HEART_RATE);
+        bool spo2Valid = (spo2 >= MIN_SPO2 && spo2 <= MAX_SPO2);
         
-        if (currentMeasurement.valid) {
+        if (hrValid && spo2Valid) {
+            // Store this valid sample
+            hrSamples[validSampleCount] = heartRate;
+            spo2Samples[validSampleCount] = spo2;
+            validSampleCount++;
+            
             if (DEBUG_MODE) {
-                Serial.printlnf("Valid: HR=%ld bpm, SpO2=%ld%%", 
+                Serial.printlnf("Valid sample %d/%d: HR=%ld, SpO2=%ld%%", 
+                              validSampleCount, MIN_VALID_SAMPLES,
                               (long)heartRate, (long)spo2);
             }
-            measuring = false;
-            stateMachine.measurementComplete();
-            return;
+            
+            // Check if we have enough samples
+            if (validSampleCount >= MIN_VALID_SAMPLES) {
+                // Calculate variance to check stability
+                float hrVariance = calculateVariance(hrSamples, validSampleCount);
+                float spo2Variance = calculateVariance(spo2Samples, validSampleCount);
+                
+                // Accept if variance is acceptable OR we have max samples
+                if ((hrVariance <= MAX_HR_VARIANCE && spo2Variance <= MAX_SPO2_VARIANCE) ||
+                    validSampleCount >= MAX_VALID_SAMPLES) {
+                    
+                    // Calculate averages
+                    float avgHR = 0, avgSpO2 = 0;
+                    for (int i = 0; i < validSampleCount; i++) {
+                        avgHR += hrSamples[i];
+                        avgSpO2 += spo2Samples[i];
+                    }
+                    avgHR /= validSampleCount;
+                    avgSpO2 /= validSampleCount;
+                    
+                    currentMeasurement.heartRate = avgHR;
+                    currentMeasurement.spO2 = avgSpO2;
+                    currentMeasurement.timestamp = Time.now();
+                    currentMeasurement.valid = true;
+                    currentMeasurement.confidence = calculateConfidence();
+                    
+                    if (DEBUG_MODE) {
+                        Serial.printlnf("Final (avg of %d): HR=%.1f bpm, SpO2=%.1f%%, confidence=%.2f", 
+                                      validSampleCount, avgHR, avgSpO2, 
+                                      currentMeasurement.confidence);
+                    }
+                    
+                    measuring = false;
+                    stateMachine.measurementComplete();
+                    return;
+                }
+            }
         }
     }
     
     if (millis() - measurementStartTime > 60000) {
-        if (DEBUG_MODE) Serial.println("Measurement timeout");
-        resetMeasurement();
-        stateMachine.measurementFailed();
+        // Timeout - but if we have any valid samples, use them
+        if (validSampleCount > 0) {
+            float avgHR = 0, avgSpO2 = 0;
+            for (int i = 0; i < validSampleCount; i++) {
+                avgHR += hrSamples[i];
+                avgSpO2 += spo2Samples[i];
+            }
+            avgHR /= validSampleCount;
+            avgSpO2 /= validSampleCount;
+            
+            currentMeasurement.heartRate = avgHR;
+            currentMeasurement.spO2 = avgSpO2;
+            currentMeasurement.timestamp = Time.now();
+            currentMeasurement.valid = true;
+            currentMeasurement.confidence = calculateConfidence() * 0.8f; // Lower confidence
+            
+            if (DEBUG_MODE) {
+                Serial.printlnf("Timeout - using %d samples: HR=%.1f, SpO2=%.1f%%", 
+                              validSampleCount, avgHR, avgSpO2);
+            }
+            measuring = false;
+            stateMachine.measurementComplete();
+        } else {
+            if (DEBUG_MODE) Serial.println("Measurement timeout - no valid samples");
+            resetMeasurement();
+            stateMachine.measurementFailed();
+        }
     }
 }
 
@@ -189,4 +257,49 @@ void SensorManager::resetMeasurement() {
     currentMeasurement.valid = false;
     validHeartRate = 0;
     validSPO2 = 0;
+    validSampleCount = 0;
+    
+    for (int i = 0; i < MAX_VALID_SAMPLES; i++) {
+        hrSamples[i] = 0;
+        spo2Samples[i] = 0;
+    }
+}
+
+float SensorManager::calculateVariance(float* samples, int count) {
+    if (count < 2) return 0;
+    
+    float mean = 0;
+    for (int i = 0; i < count; i++) {
+        mean += samples[i];
+    }
+    mean /= count;
+    
+    float variance = 0;
+    for (int i = 0; i < count; i++) {
+        float diff = samples[i] - mean;
+        variance += diff * diff;
+    }
+    variance /= count;
+    
+    return sqrt(variance);  // Return standard deviation
+}
+
+float SensorManager::calculateConfidence() {
+    if (validSampleCount == 0) return 0.0f;
+    
+    float hrStdDev = calculateVariance(hrSamples, validSampleCount);
+    float spo2StdDev = calculateVariance(spo2Samples, validSampleCount);
+    
+    // Base confidence on number of samples and variance
+    float sampleBonus = (float)validSampleCount / MAX_VALID_SAMPLES;  // 0.6 to 1.0
+    
+    // Penalize for high variance (lower is better)
+    float hrPenalty = min(hrStdDev / MAX_HR_VARIANCE, 1.0f);
+    float spo2Penalty = min(spo2StdDev / MAX_SPO2_VARIANCE, 1.0f);
+    float variancePenalty = (hrPenalty + spo2Penalty) / 2.0f;
+    
+    // Confidence = base (0.7) + sample bonus (up to 0.2) - variance penalty (up to 0.2)
+    float confidence = 0.7f + (sampleBonus * 0.2f) - (variancePenalty * 0.2f);
+    
+    return max(0.5f, min(0.99f, confidence));  // Clamp between 0.5 and 0.99
 }

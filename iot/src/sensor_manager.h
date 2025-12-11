@@ -2,7 +2,7 @@
 #define SENSOR_MANAGER_H
 
 #include "Particle.h"
-#include "config.h"              // ← MUST BE BEFORE using constants
+#include "config.h"
 #include "MAX30105.h"
 #include "heartRate.h"
 #include "spo2_algorithm.h"
@@ -51,11 +51,18 @@ private:
     bool measuring;
     unsigned long measurementStartTime;
     
+    // Multi-sample averaging for accuracy
+    float hrSamples[MAX_VALID_SAMPLES];
+    float spo2Samples[MAX_VALID_SAMPLES];
+    int validSampleCount;
+    
     void collectInitialBuffer();
     void updateBuffer();
     void calculateMetrics();
     bool validateMeasurement();
     void resetMeasurement();
+    float calculateVariance(float* samples, int count);
+    float calculateConfidence();
 };
 
 #endif

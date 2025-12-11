@@ -18,6 +18,7 @@ struct DeviceConfig {
     int activeStartMinute;                 // Start minute for active window (0-59)
     int activeEndHour;                     // End hour for active window (0-23)
     int activeEndMinute;                   // End minute for active window (0-59)
+    float timezoneOffset;                  // UTC offset in hours (e.g., -7.0 for MST)
     bool configValid;                      // True if config has been fetched from server
 };
 
@@ -36,6 +37,7 @@ public:
     void measurementComplete();
     void measurementFailed();
     void scheduleNextMeasurement();
+    void scheduleForWindowOpen();  // Smart scheduling when outside active window
     
     int getSecondsUntilNextMeasurement();
     
@@ -49,9 +51,12 @@ public:
     
     // Configuration management
     DeviceConfig getConfig();
-    void applyConfiguration(int frequencySeconds, String startTime, String endTime);
+    void applyConfiguration(int frequencySeconds, String startTime, String endTime, float timezoneOffset);
     void setDefaultConfig();
     unsigned long getMeasurementInterval();
+    void saveConfigToEEPROM();
+    void loadConfigFromEEPROM();
+    void applyTimezone(float offset);  // Apply timezone offset to device clock
     
 private:
     DeviceState currentState;
