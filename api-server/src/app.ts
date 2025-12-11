@@ -19,10 +19,17 @@ import { generateOpenAPIDocument } from './docs/openapi-generator.js';
 export const createApp = (): Application => {
   const app = express();
 
+  // Trust proxy - needed when behind reverse proxy (nginx, load balancer, etc.)
+  // This enables correct protocol detection (http vs https) and client IP
+  if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   // ===== Security Middleware =====
 
   // Helmet: Set security-related HTTP headers
   // Configure CSP to allow Swagger UI to load properly
+  // Note: For production with HTTPS on IP addresses, we need more permissive CSP
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -31,8 +38,15 @@ export const createApp = (): Application => {
           styleSrc: ["'self'", "'unsafe-inline'"],
           scriptSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          // Don't upgrade HTTP to HTTPS - important when HTTPS is not configured
+          upgradeInsecureRequests: null,
         },
       },
+      // Disable crossOriginEmbedderPolicy to allow Swagger UI assets to load
+      crossOriginEmbedderPolicy: false,
+      // Disable crossOriginResourcePolicy to allow assets from same origin
+      crossOriginResourcePolicy: { policy: 'same-site' },
     })
   );
 
