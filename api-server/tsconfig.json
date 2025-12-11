@@ -14,7 +14,7 @@
     "allowSyntheticDefaultImports": true,
     "types": ["node", "jest"]
   },
-  "include": ["src/**/*", "server.ts", "tests/**/*"],
+  "include": ["src/**/*", "server.ts", "tests/**/*", "api/**/*"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "esm": true
