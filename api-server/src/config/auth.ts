@@ -55,9 +55,15 @@ export const createAuth = (db: any) => betterAuth({
       maxAge: 60 * 5, // 5 minutes
     },
     // Cookie configuration for cross-origin support
+    // In production: sameSite: 'none' + secure: true for cross-domain cookies
+    // This allows localhost frontend to call production API
     cookie: {
       name: 'better_auth.session_token',
-      sameSite: 'lax', // Allow cross-origin cookies in development
+      // For cross-domain cookies to work (localhost -> vercel), we need:
+      // - sameSite: 'none' (allows cross-site requests to include cookie)
+      // - secure: true (required when sameSite is 'none')
+      // In development (same origin), use 'lax' which is more secure
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
     },
