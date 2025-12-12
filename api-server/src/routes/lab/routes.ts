@@ -58,8 +58,13 @@ router.post('/register', async (req: Request, res: Response) => {
   try {
     const { zip, airQuality } = req.body;
 
-    // Validate required fields
-    if (zip === undefined || airQuality === undefined) {
+    // Validate required fields and that they are valid numbers
+    if (
+      zip === undefined ||
+      airQuality === undefined ||
+      isNaN(Number(zip)) ||
+      isNaN(Number(airQuality))
+    ) {
       return res.status(400).json({ error: 'zip and airQuality are required.' });
     }
 
