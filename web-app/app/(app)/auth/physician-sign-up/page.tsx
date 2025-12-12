@@ -50,7 +50,7 @@ export default function PhysicianSignUpPage() {
 
     try {
       setIsLoading(true)
-      await apiClient.post("/api/users/register-physician", {
+      await apiClient.post("/users/register-physician", {
         name: formData.name,
         email: formData.email,
         password: formData.password,
