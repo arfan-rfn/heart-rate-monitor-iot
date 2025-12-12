@@ -12,6 +12,10 @@ export const siteConfig = {
     {
       title: "Devices",
       href: "/devices",
+    },
+    {
+      title: "API Docs",
+      href: "https://heart-rate-monitor-iot.vercel.app/api-docs",
     }
   ],
   links: {

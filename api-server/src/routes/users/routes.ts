@@ -6,6 +6,7 @@ import {
   changePassword,
   deleteAccount,
   updatePhysicianAssociation,
+  registerPhysician,
 } from './controller.js';
 import {
   generateAccountApiKey,
@@ -50,7 +51,19 @@ const apiKeyRateLimiter = rateLimit({
 const router = Router();
 
 /**
- * All user routes require authentication
+ * Public routes (no authentication required)
+ */
+
+/**
+ * @route   POST /api/users/register-physician
+ * @desc    Register a new physician account
+ * @access  Public
+ * @body    { name: string, email: string, password: string }
+ */
+router.post('/register-physician', registerPhysician);
+
+/**
+ * Protected routes (require authentication)
  */
 
 /**

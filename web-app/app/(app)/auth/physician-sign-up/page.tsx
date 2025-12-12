@@ -5,15 +5,13 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
-import { auth } from "@/lib/auth"
 import { toast } from "sonner"
-import { useAuthConfig } from "@/hooks/use-auth-config"
 import { useAuthContext } from "@/components/providers/auth-provider"
 import { PasswordStrength, validatePassword } from "@/components/ui/password-strength"
+import { apiClient } from "@/lib/api/client"
 
-export default function SignUpPage() {
+export default function PhysicianSignUpPage() {
   const router = useRouter()
-  const authConfig = useAuthConfig()
   const { isAuthenticated, isLoading: authLoading } = useAuthContext()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -23,41 +21,17 @@ export default function SignUpPage() {
     confirmPassword: "",
   })
 
-  // Redirect authenticated users to dashboard
+  // Redirect authenticated users to physician dashboard
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.push(authConfig.redirects.afterSignUp)
+      router.push("/physician")
     }
-  }, [authLoading, isAuthenticated, router, authConfig.redirects.afterSignUp])
-
-  const handleGoogleSignUp = async () => {
-    try {
-      setIsLoading(true)
-      await auth.signInWithGoogle(authConfig.redirects.afterSignUp)
-    } catch (error) {
-      console.error("Google sign-up error:", error)
-      toast.error("Failed to sign up with Google")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleAppleSignUp = async () => {
-    try {
-      setIsLoading(true)
-      await auth.signInWithApple(authConfig.redirects.afterSignUp)
-    } catch (error) {
-      console.error("Apple sign-up error:", error)
-      toast.error("Failed to sign up with Apple")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [authLoading, isAuthenticated, router])
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       toast.error("Please fill in all fields")
       return
     }
@@ -76,18 +50,16 @@ export default function SignUpPage() {
 
     try {
       setIsLoading(true)
-      await auth.signUpWithEmail({
+      await apiClient.post("/api/users/register-physician", {
         name: formData.name,
         email: formData.email,
         password: formData.password,
       })
-      toast.success(authConfig.features.emailVerification
-        ? "Account created successfully! Please check your email to verify your account."
-        : "Account created successfully!")
-      router.push(authConfig.features.emailVerification ? "/auth/sign-in" : authConfig.redirects.afterSignUp)
-    } catch (error) {
-      console.error("Email sign-up error:", error)
-      toast.error("Failed to create account. Please try again.")
+      toast.success("Physician account created successfully! Please sign in.")
+      router.push("/auth/sign-in")
+    } catch (error: any) {
+      console.error("Physician sign-up error:", error)
+      toast.error(error.message || "Failed to create account. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -125,78 +97,23 @@ export default function SignUpPage() {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Create your account
+            Physician Registration
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign up to get started with your account
+            Create your physician account to access the physician portal
           </p>
         </div>
 
         {/* Sign Up Form */}
         <div className="mt-8 space-y-6">
           <div className="space-y-4">
-            {/* Social Sign Up Buttons */}
-            {(authConfig.methods.google || authConfig.methods.apple) && (
-              <div className="space-y-3">
-                {authConfig.methods.google && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full"
-                    onClick={handleGoogleSignUp}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Icons.Circle className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                      <Icons.Google className="mr-2 h-5 w-5" />
-                    )}
-                    Continue with Google
-                  </Button>
-                )}
-
-                {authConfig.methods.apple && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full"
-                    onClick={handleAppleSignUp}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Icons.Circle className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                      <Icons.Apple className="mr-2 h-5 w-5" />
-                    )}
-                    Continue with Apple
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {/* Divider */}
-            {authConfig.hasMultipleMethods() && authConfig.methods.emailPassword && (
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            )}
-
-            {/* Email/Password Form */}
-            {authConfig.methods.emailPassword && (
             <form onSubmit={handleEmailSignUp} className="space-y-4">
               <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="name"
                   className="block text-sm font-medium text-foreground"
                 >
-                  Name
+                  Full Name
                 </label>
                 <input
                   id="name"
@@ -207,7 +124,7 @@ export default function SignUpPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  placeholder="Enter your email"
+                  placeholder="Dr. John Smith"
                   disabled={isLoading}
                 />
               </div>
@@ -227,7 +144,7 @@ export default function SignUpPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  placeholder="Enter your email"
+                  placeholder="doctor@hospital.com"
                   disabled={isLoading}
                 />
               </div>
@@ -292,11 +209,10 @@ export default function SignUpPage() {
                     Creating account...
                   </>
                 ) : (
-                  "Create account"
+                  "Create Physician Account"
                 )}
               </Button>
             </form>
-            )}
           </div>
 
           {/* Footer */}
@@ -311,12 +227,12 @@ export default function SignUpPage() {
               </Link>
             </p>
             <p className="text-sm text-muted-foreground">
-              Are you a physician?{" "}
+              Not a physician?{" "}
               <Link
-                href="/auth/physician-sign-up"
+                href="/auth/sign-up"
                 className="font-medium text-primary hover:text-primary/80"
               >
-                Register here
+                Register as a patient
               </Link>
             </p>
           </div>

@@ -3,6 +3,7 @@ import { asyncHandler, AppError } from '../../middleware/error/index.js';
 import { Device } from '../../models/devices/index.js';
 import { Measurement } from '../../models/measurements/index.js';
 import { getMongoDbInstance } from '../../config/database.js';
+import { auth } from '../../config/auth.js';
 import bcrypt from 'bcrypt';
 
 /**
@@ -421,5 +422,128 @@ export const updatePhysicianAssociation = asyncHandler(async (req: Request, res:
     }
     console.error('Error updating physician association:', error);
     throw new AppError('Failed to update physician association', 500, 'UPDATE_FAILED');
+  }
+});
+
+/**
+ * Register a new physician account
+ * POST /api/users/register-physician
+ * Public endpoint - no authentication required
+ * Body: { name, email, password }
+ *
+ * Creates a new user with role='physician'
+ */
+export const registerPhysician = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password } = req.body;
+
+  // Validate input
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    throw new AppError('Name is required', 400, 'INVALID_INPUT');
+  }
+
+  if (name.length > 100) {
+    throw new AppError('Name must not exceed 100 characters', 400, 'INVALID_INPUT');
+  }
+
+  if (!email || typeof email !== 'string') {
+    throw new AppError('Email is required', 400, 'INVALID_INPUT');
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new AppError('Invalid email format', 400, 'INVALID_INPUT');
+  }
+
+  if (!password || typeof password !== 'string') {
+    throw new AppError('Password is required', 400, 'INVALID_INPUT');
+  }
+
+  // Validate password strength
+  if (password.length < 8) {
+    throw new AppError('Password must be at least 8 characters long', 400, 'WEAK_PASSWORD');
+  }
+
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+    throw new AppError(
+      'Password must contain uppercase, lowercase, number, and special character',
+      400,
+      'WEAK_PASSWORD'
+    );
+  }
+
+  try {
+    const db = getMongoDbInstance();
+    const userCollection = db.collection('user');
+    const accountCollection = db.collection('account');
+
+    // Check if email already exists
+    const existingUser = await userCollection.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      throw new AppError('Email already registered', 409, 'EMAIL_EXISTS');
+    }
+
+    // Hash password
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10');
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Generate unique ID
+    const { ObjectId } = await import('mongodb');
+    const userId = new ObjectId().toString();
+    const now = new Date();
+
+    // Create user with physician role
+    const newUser = {
+      id: userId,
+      email: email.toLowerCase(),
+      name: name.trim(),
+      role: 'physician',
+      physicianId: null,
+      emailVerified: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await userCollection.insertOne(newUser);
+
+    // Create account record (Better Auth pattern)
+    const accountId = new ObjectId().toString();
+    const newAccount = {
+      id: accountId,
+      userId: userId,
+      accountId: userId,
+      providerId: 'credential',
+      password: hashedPassword,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await accountCollection.insertOne(newAccount);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        user: {
+          id: userId,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+          createdAt: newUser.createdAt,
+          updatedAt: newUser.updatedAt,
+        },
+      },
+      message: 'Physician account created successfully. Please sign in.',
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    console.error('Error registering physician:', error);
+    throw new AppError('Failed to create physician account', 500, 'REGISTRATION_FAILED');
   }
 });
