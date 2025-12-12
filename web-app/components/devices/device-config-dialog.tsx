@@ -84,8 +84,8 @@ export function DeviceConfigDialog({
     e.preventDefault()
 
     const frequency = parseInt(measurementFrequency)
-    if (isNaN(frequency) || frequency < 900 || frequency > 14400) {
-      toast.error("Measurement frequency must be between 900 and 14400 seconds (15 min - 4 hours)")
+    if (isNaN(frequency) || frequency < 30 || frequency > 14400) {
+      toast.error("Measurement frequency must be between 30 and 14400 seconds (30 sec - 4 hours)")
       return
     }
 
@@ -116,7 +116,7 @@ export function DeviceConfigDialog({
             <Input
               id="frequency"
               type="number"
-              min={900}
+              min={30}
               max={14400}
               step={1}
               value={measurementFrequency}
@@ -125,7 +125,7 @@ export function DeviceConfigDialog({
               required
             />
             <p className="text-xs text-muted-foreground">
-              How often the device should take measurements (900-14400 seconds, default: 1800)
+              How often the device should take measurements (30-14400 seconds, default: 1800)
             </p>
           </div>
 

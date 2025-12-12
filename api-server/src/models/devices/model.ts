@@ -41,7 +41,7 @@ const deviceSchema = new Schema<IDevice>(
       measurementFrequency: {
         type: Number,
         default: 1800, // 30 minutes in seconds
-        min: [900, 'Measurement frequency must be at least 15 minutes'],
+        min: [30, 'Measurement frequency must be at least 30 seconds'],
         max: [14400, 'Measurement frequency cannot exceed 4 hours'],
       },
       activeStartTime: {

@@ -3,9 +3,9 @@ import { deviceIdSchema, apiKeySchema, timestampSchema, mongoIdSchema } from '..
 
 // Device configuration schema
 export const deviceConfigSchema = z.object({
-  measurementFrequency: z.number().int().min(900).max(14400).openapi({
+  measurementFrequency: z.number().int().min(30).max(14400).openapi({
     example: 1800,
-    description: 'Measurement frequency in seconds (15 min to 4 hours)'
+    description: 'Measurement frequency in seconds (30 sec to 4 hours)'
   }),
   activeStartTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).openapi({
     example: '06:00',
