@@ -31,8 +31,8 @@ router.get('/status', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'a zip code is required.' });
     }
 
-    // Find all recordings for this zip code
-    const recordings = await Recording.find({ zip: Number(zip) });
+    // Find all recordings for this zip code with read concern for consistency
+    const recordings = await Recording.find({ zip: Number(zip) }).read('primary');
 
     // Check if any data exists for this zip
     if (recordings.length === 0) {
@@ -69,10 +69,10 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // Store the recording in MongoDB
-    await Recording.create({
-      zip: Number(zip),
-      airQuality: Number(airQuality),
-    });
+    await Recording.collection.insertOne(
+      { zip: Number(zip), airQuality: Number(airQuality) },
+      { writeConcern: { w: 'majority', j: true } }
+    );
 
     return res.status(201).json({ response: 'Data recorded.' });
   } catch (error) {
