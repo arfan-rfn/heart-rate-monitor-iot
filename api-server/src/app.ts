@@ -1,9 +1,15 @@
 import express from 'express';
 import type { Application, Request, Response } from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
+
+// ESM __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { auth } from './config/auth.js';
 import { toNodeHandler } from 'better-auth/node';
 import { userRoutes } from './routes/users/index.js';
@@ -89,6 +95,10 @@ export const createApp = (): Application => {
   } else {
     app.use(morgan('combined'));
   }
+
+  // ===== Static Files Middleware =====
+  // Serve static files from the public directory
+  app.use(express.static(path.join(__dirname, '../public')));
 
   // ===== Health Check Endpoint =====
   app.get('/health', (req: Request, res: Response) => {
