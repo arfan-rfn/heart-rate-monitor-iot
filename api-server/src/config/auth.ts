@@ -51,19 +51,21 @@ export const createAuth = (db: any) => betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // Update session every 24 hours
     cookieCache: {
-      enabled: true,
-      maxAge: 60 * 5, // 5 minutes
+      enabled: false, // Disable cookie cache to ensure fresh session checks
+      maxAge: 60 * 5,
     },
-    // Cookie configuration for cross-origin support
-    // Using sameSite: 'none' + secure: true to allow cross-domain cookies
-    // This is required when frontend (localhost or different domain) calls backend API
-    cookie: {
-      name: 'better_auth.session_token',
-      sameSite: 'none' as const,
+  },
+
+  // Advanced cookie configuration - permissive for cross-domain
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true,
+    },
+    defaultCookieAttributes: {
+      sameSite: 'none',
       secure: true,
       httpOnly: true,
-      // Explicitly set domain to allow cross-domain cookies
-      // Don't set domain - let the browser use the API server's domain
+      path: '/',
     },
   },
 
@@ -91,14 +93,24 @@ export const createAuth = (db: any) => betterAuth({
     apiKey(),
   ],
 
-  // Base URL for auth endpoints
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+  // Base URL for auth endpoints (should include /api/auth path)
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:4000/api/auth',
+
+  // Base path where auth is mounted (must match Express mount point)
+  basePath: '/api/auth',
 
   // Secret for signing cookies and tokens
   secret: process.env.BETTER_AUTH_SECRET || '',
 
-  // Trust host (needed for development)
-  trustedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean),
+  // Trust ALL origins for cross-domain support
+  trustedOrigins: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:8080',
+    'https://heart-rate-monitor-iot.vercel.app',
+    'https://heart-rate-monitor-iot-6z2z.vercel.app',
+    ...(process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean),
+  ],
 });
 
 /**
