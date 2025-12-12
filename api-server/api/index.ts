@@ -19,6 +19,13 @@ const initialize = async () => {
   if (isInitialized && app) return app;
 
   try {
+    // Log environment for debugging
+    console.log('🔧 Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+      BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    });
+
     // Connect to MongoDB
     await connectDatabase();
 

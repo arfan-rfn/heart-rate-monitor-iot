@@ -50,20 +50,32 @@ export const createApp = (): Application => {
   );
 
   // CORS: Configure allowed origins
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
+  // Include localhost origins by default for development/testing
+  const defaultOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:8080',
+  ];
+  const envOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
+  const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+        // Allow requests with no origin (mobile apps, Postman, curl, etc.)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+        // Check if origin is in allowed list
+        if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
+          console.warn(`CORS blocked origin: ${origin}`);
           callback(new Error('Not allowed by CORS'));
         }
       },
       credentials: true,
+      // Explicitly set headers for cross-domain cookies
+      exposedHeaders: ['Set-Cookie'],
     })
   );
 
