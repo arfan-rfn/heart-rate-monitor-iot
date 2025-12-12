@@ -16,7 +16,6 @@ import { userRoutes } from './routes/users/index.js';
 import { deviceRoutes } from './routes/devices/index.js';
 import { measurementRoutes } from './routes/measurements/index.js';
 import { physicianRoutes } from './routes/physicians/index.js';
-import { labRoutes } from './routes/lab/index.js';
 import { errorHandler, notFound } from './middleware/error/index.js';
 import { generateOpenAPIDocument } from './docs/openapi-generator.js';
 
@@ -31,10 +30,6 @@ export const createApp = (): Application => {
   if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
   }
-
-  // ===== Lab Routes (must be before global CORS for permissive access) =====
-  // These routes need permissive CORS for zyBooks testing (file:// origin)
-  app.use('/lab', express.json(), labRoutes);
 
   // ===== Security Middleware =====
 
