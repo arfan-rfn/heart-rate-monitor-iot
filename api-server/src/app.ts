@@ -32,6 +32,10 @@ export const createApp = (): Application => {
     app.set('trust proxy', 1);
   }
 
+  // ===== Lab Routes (must be before global CORS for permissive access) =====
+  // These routes need permissive CORS for zyBooks testing (file:// origin)
+  app.use('/lab', express.json(), labRoutes);
+
   // ===== Security Middleware =====
 
   // Helmet: Set security-related HTTP headers
@@ -153,9 +157,6 @@ export const createApp = (): Application => {
   app.use('/api/measurements', measurementRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/physicians', physicianRoutes);
-
-  // ===== Lab Routes (ECE 513 Assignment) =====
-  app.use('/lab', labRoutes);
 
   // ===== API Info Endpoint =====
   app.get('/api', (req: Request, res: Response) => {
