@@ -16,6 +16,7 @@ import { userRoutes } from './routes/users/index.js';
 import { deviceRoutes } from './routes/devices/index.js';
 import { measurementRoutes } from './routes/measurements/index.js';
 import { physicianRoutes } from './routes/physicians/index.js';
+import { labRoutes } from './routes/lab/index.js';
 import { errorHandler, notFound } from './middleware/error/index.js';
 import { generateOpenAPIDocument } from './docs/openapi-generator.js';
 
@@ -152,6 +153,9 @@ export const createApp = (): Application => {
   app.use('/api/measurements', measurementRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/physicians', physicianRoutes);
+
+  // ===== Lab Routes (ECE 513 Assignment) =====
+  app.use('/lab', labRoutes);
 
   // ===== API Info Endpoint =====
   app.get('/api', (req: Request, res: Response) => {
