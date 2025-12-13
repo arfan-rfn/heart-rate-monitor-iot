@@ -87,11 +87,20 @@ measurementSchema.statics.findByDevice = function (deviceId: string, limit: numb
 
 // Get daily measurements for a user
 measurementSchema.statics.findDailyMeasurements = function (userId: string, date: Date) {
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
+  // Use UTC methods to ensure consistent timezone handling
+  const startOfDay = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    0, 0, 0, 0
+  ));
 
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
+  const endOfDay = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    23, 59, 59, 999
+  ));
 
   return this.find({
     userId,
@@ -101,9 +110,14 @@ measurementSchema.statics.findDailyMeasurements = function (userId: string, date
 
 // Get weekly summary for a user
 measurementSchema.statics.getWeeklySummary = async function (userId: string) {
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
+  const now = new Date();
+  // Use UTC to ensure consistent timezone handling
+  const sevenDaysAgo = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() - 7,
+    0, 0, 0, 0
+  ));
 
   const result = await this.aggregate([
     {
@@ -131,11 +145,16 @@ measurementSchema.statics.getWeeklySummary = async function (userId: string) {
   return result[0] || null;
 };
 
-// Get daily aggregates for the last 7 days
+// Get daily aggregates for the last N days
 measurementSchema.statics.getDailyAggregates = async function (userId: string, days: number = 7) {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  startDate.setHours(0, 0, 0, 0);
+  const now = new Date();
+  // Use UTC to ensure consistent timezone handling
+  const startDate = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() - days,
+    0, 0, 0, 0
+  ));
 
   return await this.aggregate([
     {
@@ -156,6 +175,8 @@ measurementSchema.statics.getDailyAggregates = async function (userId: string, d
         minHeartRate: { $min: '$heartRate' },
         maxHeartRate: { $max: '$heartRate' },
         averageSpO2: { $avg: '$spO2' },
+        minSpO2: { $min: '$spO2' },
+        maxSpO2: { $max: '$spO2' },
         count: { $sum: 1 },
       },
     },
@@ -170,6 +191,8 @@ measurementSchema.statics.getDailyAggregates = async function (userId: string, d
         minHeartRate: 1,
         maxHeartRate: 1,
         averageSpO2: { $round: ['$averageSpO2', 1] },
+        minSpO2: 1,
+        maxSpO2: 1,
         count: 1,
       },
     },
