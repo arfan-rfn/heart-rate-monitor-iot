@@ -2,17 +2,25 @@
 
 ## Overview
 
-This project contains the firmware for the Particle Photon 2 IoT device that interfaces with the MAX30102/MAX30105 heart rate and blood oxygen sensor. The device periodically prompts users to take measurements, processes sensor data, and transmits readings to the backend API server.
+Firmware for the Particle Photon 2 IoT device that interfaces with the MAX30102/MAX30105 heart rate and blood oxygen sensor. The device periodically prompts users to take measurements, processes sensor data, and transmits readings to the backend API server.
+
+**Supports two connection modes:**
+- **Direct HTTP** – For local development with the API server running on your computer
+- **Particle Webhooks** – For production deployment with Vercel-hosted HTTPS API
+
+---
 
 ## Features
 
-- **Heart Rate & SpO2 Measurement**: Accurate pulse oximetry using the MAX30102/MAX30105 sensor
-- **State Machine Architecture**: Robust state management for measurement lifecycle
-- **Configurable Scheduling**: Server-controlled measurement frequency and active time windows
-- **Offline Storage**: EEPROM-based storage for up to 96 measurements when WiFi is unavailable
-- **Auto-Sync**: Automatic transmission of stored measurements when connectivity is restored
-- **Visual Feedback**: RGB LED patterns indicate device status and measurement results
-- **Timezone Support**: User-configurable timezone for accurate scheduling
+- **Heart Rate & SpO2 Measurement** – Accurate pulse oximetry using the MAX30102/MAX30105 sensor
+- **State Machine Architecture** – Robust state management for measurement lifecycle
+- **Configurable Scheduling** – Server-controlled measurement frequency and active time windows
+- **Offline Storage** – EEPROM-based storage for up to 48 measurements when WiFi is unavailable
+- **Auto-Sync** – Automatic transmission of stored measurements when connectivity is restored
+- **Visual Feedback** – RGB LED patterns indicate device status and measurement results
+- **Dual Connection Modes** – Switch between localhost (HTTP) and Vercel (HTTPS via webhooks)
+
+---
 
 ## Hardware Requirements
 
@@ -33,8 +41,9 @@ VIN  → 3.3V
 GND  → GND
 SDA  → D0 (I2C Data)
 SCL  → D1 (I2C Clock)
-INT  → D2 (Interrupt, optional)
 ```
+
+---
 
 ## Software Architecture
 
@@ -81,234 +90,129 @@ The firmware implements a synchronous state machine with five states:
 | **IDLE** | Waiting for next scheduled measurement | Off |
 | **WAITING_FOR_USER** | Prompting user to place finger on sensor | Blue blinking |
 | **MEASURING** | Collecting sensor samples | Solid blue |
-| **STABILIZING** | Averaging readings for accuracy | Solid cyan |
-| **TRANSMITTING** | Sending data to server | Green (success) / Yellow (stored locally) |
+| **STABILIZING** | Averaging readings for accuracy | Pulsing blue |
+| **TRANSMITTING** | Sending data to server | Cyan → Green (success) / Yellow (stored) |
 
 ### Module Structure
 
 ```
 iot/src/
 ├── heart-track-iot.ino    # Main entry point
-├── config.h               # Configuration settings
-├── state_machine.h/cpp    # State machine logic
+├── config.h               # Configuration (WiFi, API, connection mode)
+├── state_machine.h/cpp    # State machine logic & scheduling
 ├── sensor_manager.h/cpp   # MAX30102 sensor interface
-├── network_manager.h/cpp  # WiFi and HTTP communication
+├── network_manager.h/cpp  # HTTP/Webhook communication
 └── led_controller.h/cpp   # RGB LED patterns
 ```
 
 ---
 
-## Development Setup
+## Development Setup with Particle Workbench
 
 ### Prerequisites
 
-1. **Particle Account**
-   - Create an account at https://login.particle.io/signup
-   - Note: You'll need your Particle device ID for device registration
+1. **Particle Account** – Create an account at https://login.particle.io/signup
+2. **Particle Photon 2** – Device must be claimed to your Particle account
+3. **Visual Studio Code** – Download from https://code.visualstudio.com/
 
-2. **Particle Photon 2 Device**
-   - Device must be claimed to your Particle account
-   - Get your device ID from the Particle Console or via CLI
+### Step 1: Install Particle Workbench
 
-### Option 1: VSCode with Particle Workbench (Recommended)
+#### Windows
 
-#### Windows Installation
+1. Download and install VSCode from https://code.visualstudio.com/
+2. Open VSCode
+3. Press `Ctrl+Shift+X` to open Extensions
+4. Search for **"Particle Workbench"**
+5. Click **Install** and wait for all dependencies (this may take several minutes)
+6. Restart VSCode when prompted
 
-1. **Install VSCode**
-   - Download from https://code.visualstudio.com/
-   - Run the installer with default settings
+#### macOS
 
-2. **Install Particle Workbench Extension**
-   - Open VSCode
-   - Press `Ctrl+Shift+X` to open Extensions
-   - Search for "Particle Workbench"
-   - Click **Install**
-   - Wait for all dependencies to install (this may take several minutes)
+1. Download and install VSCode from https://code.visualstudio.com/
+2. Open VSCode
+3. Press `Cmd+Shift+X` to open Extensions
+4. Search for **"Particle Workbench"**
+5. Click **Install** and wait for all dependencies
+6. Restart VSCode when prompted
 
-3. **Login to Particle**
-   - Press `Ctrl+Shift+P` to open Command Palette
-   - Type `Particle: Login` and press Enter
-   - Enter your Particle credentials
+### Step 2: Login to Particle
 
-4. **Open the Project**
-   - File → Open Folder → Navigate to `iot/`
-   - VSCode will recognize it as a Particle project
+1. Open Command Palette:
+   - **Windows:** `Ctrl+Shift+P`
+   - **macOS:** `Cmd+Shift+P`
+2. Type `Particle: Login` and press Enter
+3. Enter your Particle account credentials
 
-5. **Configure Target Device**
-   - Press `Ctrl+Shift+P`
-   - Type `Particle: Configure Project for Device`
-   - Select **P2 / Photon 2** as the platform
-   - Select the latest Device OS version (6.x.x recommended)
+### Step 3: Open the IoT Project
 
-6. **Compile and Flash**
-   - Press `Ctrl+Shift+P`
-   - Type `Particle: Cloud Flash` to compile and flash over-the-air
-   - Or use `Particle: Local Compile` then `Particle: Flash application (local)`
+1. File → Open Folder
+2. Navigate to the `iot/` directory and open it
+3. VSCode will recognize it as a Particle project
 
-#### macOS Installation
+### Step 4: Configure Target Device
 
-1. **Install VSCode**
-   - Download from https://code.visualstudio.com/
-   - Drag to Applications folder
+1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. Type `Particle: Configure Project for Device`
+3. Select **P2 / Photon 2** as the platform
+4. Select Device OS version **6.x.x** (recommended: latest stable)
 
-2. **Install Particle Workbench Extension**
-   - Open VSCode
-   - Press `Cmd+Shift+X` to open Extensions
-   - Search for "Particle Workbench"
-   - Click **Install**
-   - Wait for all dependencies to install
+### Step 5: Configure Your Device
 
-3. **Login to Particle**
-   - Press `Cmd+Shift+P` to open Command Palette
-   - Type `Particle: Login` and press Enter
-   - Enter your Particle credentials
-
-4. **Open the Project**
-   - File → Open Folder → Navigate to `iot/`
-
-5. **Configure Target Device**
-   - Press `Cmd+Shift+P`
-   - Type `Particle: Configure Project for Device`
-   - Select **P2 / Photon 2** as the platform
-   - Select the latest Device OS version
-
-6. **Compile and Flash**
-   - Press `Cmd+Shift+P`
-   - Type `Particle: Cloud Flash` to compile and flash OTA
-
-### Option 2: Particle CLI
-
-#### Windows Installation
-
-```powershell
-# Install Node.js first from https://nodejs.org/
-# Then install Particle CLI
-npm install -g particle-cli
-
-# Login
-particle login
-
-# List your devices
-particle list
-```
-
-#### macOS Installation
-
-```bash
-# Install via npm (requires Node.js)
-npm install -g particle-cli
-
-# Or install via bash installer
-bash <( curl -sL https://particle.io/install-cli )
-
-# Login
-particle login
-
-# List your devices
-particle list
-```
-
-#### CLI Commands
-
-```bash
-# Navigate to project directory
-cd iot/
-
-# Compile for Photon 2
-particle compile p2 src/ --saveTo firmware.bin
-
-# Flash over-the-air
-particle flash <device_name> firmware.bin
-
-# Flash via USB (device must be in DFU mode)
-particle flash --usb firmware.bin
-
-# Monitor serial output
-particle serial monitor
-```
-
-### Option 3: Particle Web IDE
-
-1. Go to https://build.particle.io/
-2. Create a new app
-3. Copy all files from `src/` into the Web IDE
-4. Add the library: `SparkFun_MAX3010x_Sensor_Library`
-5. Select your device and click **Flash**
-
----
-
-## Configuring a New Device
-
-### Step 1: Hardware Assembly
-
-1. Connect the MAX30102/MAX30105 sensor to the Photon 2:
-   - VIN → 3.3V
-   - GND → GND
-   - SDA → D0
-   - SCL → D1
-
-2. Connect the Photon 2 to your computer via USB
-
-### Step 2: Get Device ID
-
-```bash
-# Via CLI
-particle identify
-
-# Or find it in Particle Console: https://console.particle.io/devices
-```
-
-### Step 3: Configure WiFi Credentials
-
-Edit `src/config.h`:
+Edit `src/config.h` with your settings:
 
 ```cpp
+// ===== WiFi Credentials =====
 #define WIFI_SSID "YourNetworkName"
 #define WIFI_PASSWORD "YourNetworkPassword"
-```
 
-### Step 4: Register Device in Web App
-
-1. Log in to the Heart Track web application
-2. Navigate to **Devices** page
-3. Click **Register New Device**
-4. Enter your Particle device ID (24-character hex string)
-5. **Copy the API key** that is displayed (shown only once!)
-
-### Step 5: Configure API Connection
-
-Edit `src/config.h`:
-
-```cpp
-// For local development (API server on your computer)
-#define API_SERVER_HOST "192.168.1.100"  // Your computer's local IP
-#define API_SERVER_PORT 4000
-
-// For production (EC2 instance)
-#define API_SERVER_HOST "your-ec2-ip-address"  // e.g., "54.123.45.67"
-#define API_SERVER_PORT 4000
-
-// API key from device registration
+// ===== API Key (from web app device registration) =====
 #define API_KEY "your-64-character-api-key-here"
+
+// ===== Connection Mode (choose one) =====
+
+// For LOCAL DEVELOPMENT (API server on your computer):
+#define API_SERVER_HOST "192.168.1.100"  // Your computer's IP address
+#define API_SERVER_PORT 4000
+#define USE_WEBHOOK false
+
+// For VERCEL PRODUCTION (HTTPS via webhooks):
+#define API_SERVER_HOST "heart-rate-monitor-iot.vercel.app"
+#define API_SERVER_PORT 443
+#define USE_WEBHOOK true
 ```
 
-### Step 6: Flash Firmware
+### Step 6: Compile the Firmware
 
-Using VSCode/Particle Workbench:
-- Press `Ctrl+Shift+P` (Windows) or `Cmd+Shift+P` (Mac)
-- Type `Particle: Cloud Flash`
+1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. Choose one of:
+   - **`Particle: Cloud Compile`** – Compile in the cloud (recommended for first time)
+   - **`Particle: Local Compile`** – Compile locally (faster after initial setup)
 
-Using CLI:
-```bash
-particle flash <device_name> src/
-```
+### Step 7: Flash the Firmware
 
-### Step 7: Verify Connection
+#### Option A: Cloud Flash (Over-the-Air)
 
-```bash
-# Monitor serial output
-particle serial monitor
-```
+1. Ensure your Photon 2 is online (breathing cyan LED)
+2. Open Command Palette
+3. Type `Particle: Cloud Flash`
+4. Select your device from the list
+
+#### Option B: Local Flash (USB)
+
+1. Connect your Photon 2 via USB
+2. Put device in DFU mode:
+   - Hold **MODE** button
+   - Press and release **RESET** button
+   - Continue holding **MODE** until LED blinks yellow
+3. Open Command Palette
+4. Type `Particle: Flash application (local)`
+
+### Step 8: Monitor Serial Output
+
+1. Connect your Photon 2 via USB (if not already)
+2. Open Command Palette
+3. Type `Particle: Serial Monitor`
+4. Select your device's serial port
 
 You should see:
 ```
@@ -320,10 +224,132 @@ Connecting to WiFi...
 WiFi Connected
 IP: 192.168.1.xxx
 Particle Cloud Connected
-Device: 1a2b3c4d5e6f7890abcd1234
-Fetching device configuration from server...
+Device: e00fce68xxxxxxxxxx
+
+Network Manager initialized
+Mode: Direct HTTP
+API Server: http://192.168.1.100:4000
 
 >>> System Ready <<<
+```
+
+---
+
+## Testing Modes
+
+### Local Development Testing (Direct HTTP)
+
+Use this mode when running the API server on your local machine.
+
+#### Configuration
+
+Edit `src/config.h`:
+
+```cpp
+#define API_SERVER_HOST "192.168.1.100"  // Your computer's local IP
+#define API_SERVER_PORT 4000
+#define USE_WEBHOOK false
+```
+
+#### Finding Your Computer's IP Address
+
+**Windows:**
+```powershell
+ipconfig
+# Look for "IPv4 Address" under your WiFi adapter
+```
+
+**macOS:**
+```bash
+ipconfig getifaddr en0
+# Or: System Settings → Network → WiFi → Details → TCP/IP
+```
+
+#### Starting the Local API Server
+
+```bash
+cd ../api-server
+npm install
+npm run dev
+```
+
+The server should start on `http://localhost:4000`
+
+#### Testing the Connection
+
+1. Start the API server
+2. Flash firmware with `USE_WEBHOOK false`
+3. Monitor serial output
+4. Wait for measurement prompt (blue blinking LED)
+5. Place finger on sensor
+6. Verify measurement appears in API logs
+
+### Vercel Production Testing (Webhooks)
+
+Use this mode for production deployment with the Vercel-hosted API.
+
+#### Configuration
+
+Edit `src/config.h`:
+
+```cpp
+#define API_SERVER_HOST "heart-rate-monitor-iot.vercel.app"
+#define API_SERVER_PORT 443
+#define USE_WEBHOOK true
+```
+
+#### Setting Up Webhooks
+
+**You must configure webhooks in Particle Console before using this mode.**
+
+See [WEBHOOK_SETUP.md](WEBHOOK_SETUP.md) for detailed instructions.
+
+#### Required Webhooks
+
+| Webhook Event | Endpoint | Method |
+|---------------|----------|--------|
+| `heartrate-measurement` | `/api/measurements` | POST |
+| `heartrate-timeout` | `/api/notifications` | POST |
+| `heartrate-getconfig` | `/api/devices/{deviceId}/config` | GET |
+
+#### Testing the Connection
+
+1. Configure all three webhooks in Particle Console
+2. Flash firmware with `USE_WEBHOOK true`
+3. Monitor serial output for webhook messages
+4. Verify events in Particle Console → Events
+5. Check measurements in the web app
+
+---
+
+## Device Registration
+
+### Step 1: Get Your Device ID
+
+Using Particle CLI:
+```bash
+particle identify
+```
+
+Or from serial output:
+```
+Device: e00fce68xxxxxxxxxx  ← This is your Device ID
+```
+
+Or from Particle Console: https://console.particle.io/devices
+
+### Step 2: Register in Web App
+
+1. Log in to the Heart Track web application
+2. Navigate to **Devices** page
+3. Click **Register New Device**
+4. Enter your 24-character Particle device ID
+5. **Copy the API key** that is displayed (shown only once!)
+
+### Step 3: Update config.h
+
+```cpp
+#define API_KEY "your-64-character-api-key-here"
 ```
 
 ---
@@ -334,27 +360,27 @@ Fetching device configuration from server...
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `API_SERVER_HOST` | - | IP address or hostname of API server |
-| `API_SERVER_PORT` | 4000 | API server port |
-| `API_KEY` | - | Device API key from web app |
-| `WIFI_SSID` | - | WiFi network name |
-| `WIFI_PASSWORD` | - | WiFi password |
-| `MEASUREMENT_INTERVAL_MS` | 1800000 | Default 30 minutes (overridden by server) |
+| `API_SERVER_HOST` | – | API server hostname or IP |
+| `API_SERVER_PORT` | 4000 / 443 | Port (4000 for local, 443 for Vercel) |
+| `USE_WEBHOOK` | true | `true` for Vercel, `false` for localhost |
+| `API_KEY` | – | Device API key from web app |
+| `WIFI_SSID` | – | WiFi network name |
+| `WIFI_PASSWORD` | – | WiFi password |
+| `MEASUREMENT_INTERVAL_MS` | 1800000 | Default 30 min (server can override) |
 | `MEASUREMENT_TIMEOUT_MS` | 300000 | 5-minute timeout for user response |
-| `DEFAULT_START_HOUR` | 6 | Default active window start (6 AM) |
-| `DEFAULT_END_HOUR` | 22 | Default active window end (10 PM) |
-| `DEFAULT_TIMEZONE_OFFSET` | -7.0 | Default UTC offset (MST) |
-| `MAX_STORED_MEASUREMENTS` | 96 | Offline storage capacity |
+| `DEFAULT_START_HOUR` | 6 | Active window start (6 AM) |
+| `DEFAULT_END_HOUR` | 22 | Active window end (10 PM) |
+| `MAX_STORED_MEASUREMENTS` | 48 | Offline storage capacity |
 
-### Server Configuration
+### Server-Controlled Configuration
 
-The device fetches configuration from the API server on boot and every hour:
+The device fetches configuration on boot and hourly:
 
 ```
 GET /api/devices/{deviceId}/config
 ```
 
-Server response:
+Response:
 ```json
 {
   "success": true,
@@ -362,9 +388,7 @@ Server response:
     "config": {
       "measurementFrequency": 1800,
       "activeStartTime": "06:00",
-      "activeEndTime": "22:00",
-      "timezone": "America/Phoenix",
-      "timezoneOffset": -7.0
+      "activeEndTime": "22:00"
     }
   }
 }
@@ -375,8 +399,6 @@ Server response:
 ## API Integration
 
 ### Measurement Submission
-
-The device sends measurements via HTTP POST:
 
 ```
 POST /api/measurements
@@ -391,7 +413,7 @@ X-API-Key: <your-api-key>
 Body:
 ```json
 {
-  "deviceId": "1a2b3c4d5e6f7890abcd1234",
+  "deviceId": "e00fce68xxxxxxxxxx",
   "heartRate": 72,
   "spO2": 98,
   "timestamp": "2025-12-11T14:30:00Z",
@@ -400,19 +422,29 @@ Body:
 }
 ```
 
-### Finding Your Computer's IP (Local Development)
+### Testing API Endpoints
 
-**Windows:**
-```powershell
-ipconfig
-# Look for IPv4 Address under your WiFi adapter
-```
-
-**macOS:**
+**Test measurement submission:**
 ```bash
-ifconfig | grep "inet " | grep -v 127.0.0.1
-# Or: System Preferences → Network → WiFi → Advanced → TCP/IP
+curl -X POST "http://localhost:4000/api/measurements" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "deviceId": "YOUR_DEVICE_ID",
+    "heartRate": 75,
+    "spO2": 98,
+    "timestamp": "2025-12-11T12:00:00Z",
+    "quality": "good"
+  }'
 ```
+
+**Test config endpoint:**
+```bash
+curl -H "X-API-Key: YOUR_API_KEY" \
+  "http://localhost:4000/api/devices/YOUR_DEVICE_ID/config"
+```
+
+For Vercel, replace `http://localhost:4000` with `https://heart-rate-monitor-iot.vercel.app`
 
 ---
 
@@ -423,8 +455,10 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 | Cyan | Solid | Device starting up |
 | Blue | Slow blink (1 Hz) | Waiting for user measurement |
 | Blue | Solid | Measurement in progress |
+| Blue | Pulsing | Stabilizing/calculating |
+| Cyan | Solid | Transmitting data |
 | Green | Single flash | Measurement sent successfully |
-| Yellow | Single flash | Measurement stored locally (no WiFi) |
+| Yellow | Single flash | Measurement stored locally (offline) |
 | Red | Rapid blink | Error condition |
 
 ---
@@ -439,13 +473,24 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 ### WiFi Won't Connect
 1. Verify SSID and password are correct in `config.h`
 2. Ensure network is 2.4GHz (Photon 2 supports both 2.4/5GHz)
-3. Try resetting WiFi credentials: hold MODE button for 3+ seconds
+3. Check WiFi signal strength via serial output (RSSI)
 
-### Measurements Not Transmitting
-1. Verify `API_SERVER_HOST` and `API_SERVER_PORT` are correct
-2. Check `API_KEY` matches your registered device
-3. Ensure API server is running and accessible
-4. Monitor serial output for error messages
+### Measurements Not Transmitting (Local Mode)
+1. Verify `API_SERVER_HOST` is your computer's IP (not localhost)
+2. Ensure API server is running on port 4000
+3. Check that device and computer are on the same network
+4. Verify firewall allows connections on port 4000
+
+### Measurements Not Transmitting (Webhook Mode)
+1. Verify all three webhooks are configured in Particle Console
+2. Check Particle Console → Events for `hook-error/*` events
+3. Ensure `API_KEY` matches your registered device
+4. Verify device is connected to Particle Cloud (breathing cyan LED)
+
+### Configuration Not Loading
+1. Check API key is valid (test with curl)
+2. For webhooks, verify `heartrate-getconfig` webhook has Response Template
+3. Monitor serial output for config response parsing errors
 
 ### Inaccurate Readings
 1. Ensure finger is properly placed (pad of finger, not tip)
@@ -455,21 +500,28 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 
 ---
 
+## Particle CLI Reference
+
+```bash
+particle login              # Log in to Particle account
+particle list               # List your devices
+particle identify           # Get device ID (when connected via USB)
+particle serial monitor     # View serial output
+particle compile p2 .       # Compile firmware
+particle flash <device>     # Flash over-the-air
+particle flash --usb        # Flash via USB (DFU mode)
+```
+
+---
+
 ## Resources
 
-### Documentation
-- [Particle Photon 2 Docs](https://docs.particle.io/photon-2/)
+- [Particle Photon 2 Documentation](https://docs.particle.io/photon-2/)
+- [Particle Workbench Guide](https://docs.particle.io/getting-started/developer-tools/workbench/)
 - [MAX30102 Datasheet](https://datasheets.maximintegrated.com/en/ds/MAX30102.pdf)
 - [SparkFun MAX3010x Library](https://github.com/sparkfun/SparkFun_MAX3010x_Sensor_Library)
-
-### Particle CLI Reference
-```bash
-particle help              # Show all commands
-particle list              # List your devices
-particle serial monitor    # View serial output
-particle flash <device>    # Flash firmware OTA
-particle identify          # Get device ID
-```
+- [Particle Console](https://console.particle.io/)
+- [Particle Webhooks Guide](https://docs.particle.io/integrations/webhooks/)
 
 ---
 

@@ -74,18 +74,9 @@ void setup() {
     networkManager.begin();
     stateMachine.begin();
     
-    // Fetch device config from server on startup if WiFi is connected
-    if (WiFi.ready()) {
-        Serial.println("Fetching device configuration from server...");
-        networkManager.fetchDeviceConfig();
-    }
-    
     ledController.setPattern(DEVICE_LED_OFF);
     Serial.println("\n>>> System Ready <<<\n");
 }
-
-// Guard flag to prevent double transmission
-static bool transmissionInProgress = false;
 
 void loop() {
     stateMachine.update();
@@ -93,13 +84,10 @@ void loop() {
     ledController.update();
     networkManager.update();
     
-    // Handle transmission state with guard to prevent re-entry
     if (stateMachine.getCurrentState() == STATE_TRANSMITTING) {
-        if (!transmissionInProgress && sensorManager.isMeasurementComplete()) {
-            transmissionInProgress = true;
+        if (sensorManager.isMeasurementComplete()) {
             MeasurementData data = sensorManager.getMeasurement();
             networkManager.transmitMeasurement(data);
-            transmissionInProgress = false;
         }
     }
     

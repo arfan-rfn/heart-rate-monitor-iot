@@ -1,10 +1,26 @@
+/*
+ * state_machine.cpp - Device State Machine Implementation
+ * 
+ * Implements the measurement lifecycle state machine:
+ *   IDLE -> WAITING_FOR_USER -> MEASURING -> STABILIZING -> TRANSMITTING -> IDLE
+ * 
+ * Key behaviors:
+ *   - Measurements are scheduled based on configurable interval (default 30 min)
+ *   - Active time window restricts when measurements are requested (default 6AM-10PM)
+ *   - Server configuration overrides defaults when fetched successfully
+ *   - Visual feedback via LED patterns for each state
+ *   - Timeout notifications sent when user doesn't respond
+ */
+
 #include "state_machine.h"
 #include "config.h"
 #include "led_controller.h"
 #include "sensor_manager.h"
+#include "network_manager.h"
 
 extern LEDController ledController;
 extern SensorManager sensorManager;
+extern NetworkManager networkManager;
 
 StateMachine::StateMachine() {
     currentState = STATE_IDLE;
@@ -14,21 +30,21 @@ StateMachine::StateMachine() {
     nextScheduledMeasurement = 0;
     retryCount = 0;
     
-    // Try to load saved configuration from EEPROM, fall back to defaults
-    loadConfigFromEEPROM();
+    // Initialize with default configuration from config.h
+    setDefaultConfig();
 }
 
+/*
+ * Set default configuration values from config.h.
+ * Called on boot and can be called to reset to defaults.
+ */
 void StateMachine::setDefaultConfig() {
     config.measurementIntervalMs = MEASUREMENT_INTERVAL_MS;
     config.activeStartHour = DEFAULT_START_HOUR;
     config.activeStartMinute = DEFAULT_START_MINUTE;
     config.activeEndHour = DEFAULT_END_HOUR;
     config.activeEndMinute = DEFAULT_END_MINUTE;
-    config.timezoneOffset = DEFAULT_TIMEZONE_OFFSET;
-    config.configValid = false;  // Will be set to true when fetched from server
-    
-    // Apply default timezone
-    applyTimezone(config.timezoneOffset);
+    config.configValid = false;  // Will be set true when server config is applied
     
     if (DEBUG_MODE) {
         Serial.println("Default config loaded:");
@@ -38,11 +54,13 @@ void StateMachine::setDefaultConfig() {
         Serial.printlnf("  Active window: %02d:%02d - %02d:%02d",
                         config.activeStartHour, config.activeStartMinute,
                         config.activeEndHour, config.activeEndMinute);
-        Serial.printlnf("  Timezone offset: %.1f hours (UTC%+.1f)",
-                        config.timezoneOffset, config.timezoneOffset);
     }
 }
 
+/*
+ * Initialize the state machine.
+ * Starts in IDLE state and schedules the first measurement.
+ */
 void StateMachine::begin() {
     currentState = STATE_IDLE;
     scheduleNextMeasurement();
@@ -57,10 +75,17 @@ void StateMachine::begin() {
     }
 }
 
+/*
+ * Main update loop - called every iteration of loop().
+ * Handles state-specific logic and transitions.
+ */
 void StateMachine::update() {
     unsigned long currentTime = millis();
     
+    // === IDLE STATE ===
+    // Wait for scheduled measurement time, then check if within active window
     if (currentState == STATE_IDLE) {
+        // Periodic countdown display (every 10 seconds)
         static unsigned long lastCountdownUpdate = 0;
         if (currentTime - lastCountdownUpdate >= 10000) {
             int secondsRemaining = getSecondsUntilNextMeasurement();
@@ -70,7 +95,7 @@ void StateMachine::update() {
                               secondsRemaining / 60,
                               secondsRemaining % 60);
                 
-                // Also show time window status periodically
+                // Show time window status
                 if (Time.isValid()) {
                     Serial.printlnf("Current time: %02d:%02d, Active: %s",
                                   Time.hour(), Time.minute(),
@@ -80,12 +105,12 @@ void StateMachine::update() {
             lastCountdownUpdate = currentTime;
         }
         
-        // Use subtraction to handle millis() overflow correctly
-        if ((long)(currentTime - nextScheduledMeasurement) >= 0) {
-            // Check if we're within the active time window before requesting measurement
+        // Check if it's time for next measurement
+        if (currentTime >= nextScheduledMeasurement) {
+            // Verify we're within the active time window
             if (!isWithinActiveWindow()) {
                 if (DEBUG_MODE) {
-                    Serial.println("Outside active window - waiting for window to open");
+                    Serial.println("Outside active window - skipping measurement");
                     Serial.printlnf("Active window: %02d:%02d - %02d:%02d",
                                   config.activeStartHour, config.activeStartMinute,
                                   config.activeEndHour, config.activeEndMinute);
@@ -93,28 +118,48 @@ void StateMachine::update() {
                         Serial.printlnf("Current time: %02d:%02d", Time.hour(), Time.minute());
                     }
                 }
-                // Smart scheduling: calculate time until window opens
-                scheduleForWindowOpen();
+                // Reschedule and stay in IDLE
+                scheduleNextMeasurement();
                 return;
             }
             
+            // Start measurement cycle
             resetRetryCount();
             setState(STATE_WAITING_FOR_USER);
         }
     }
     
+    // === WAITING_FOR_USER STATE ===
+    // Wait for user to place finger on sensor, with timeout
     else if (currentState == STATE_WAITING_FOR_USER) {
         if (checkTimeout()) {
+            // User didn't respond within timeout period
             if (DEBUG_MODE) Serial.println("User timeout - skipping measurement");
+            
+            ledController.flashWarning();  // Yellow flash
+            
+            // Notify server about timeout
+            networkManager.sendTimeoutNotification();
+            
+            // Return to IDLE and schedule next measurement
             scheduleNextMeasurement();
             setState(STATE_IDLE);
         }
         else if (sensorManager.isFingerDetected()) {
+            // User placed finger - start measurement
             setState(STATE_MEASURING);
         }
     }
+    
+    // Note: MEASURING, STABILIZING, TRANSMITTING states are handled by
+    // SensorManager and NetworkManager, which call measurementComplete()
+    // or measurementFailed() to transition back.
 }
 
+/*
+ * Transition to a new state.
+ * Handles cleanup of old state and initialization of new state.
+ */
 void StateMachine::setState(DeviceState newState) {
     if (newState != currentState) {
         exitState(currentState);
@@ -131,6 +176,10 @@ void StateMachine::setState(DeviceState newState) {
     }
 }
 
+/*
+ * Handle entering a new state.
+ * Sets appropriate LED pattern and starts any state-specific actions.
+ */
 void StateMachine::enterState(DeviceState state) {
     switch (state) {
         case STATE_IDLE:
@@ -142,7 +191,7 @@ void StateMachine::enterState(DeviceState state) {
             break;
             
         case STATE_WAITING_FOR_USER:
-            ledController.setPattern(DEVICE_LED_BLINK_BLUE);
+            ledController.setPattern(DEVICE_LED_BLINK_BLUE);  // Slow blue blink
             if (DEBUG_MODE) {
                 Serial.println(">>> Place finger on sensor <<<");
                 if (retryCount > 0) {
@@ -153,86 +202,72 @@ void StateMachine::enterState(DeviceState state) {
             break;
             
         case STATE_MEASURING:
-            ledController.setPattern(DEVICE_LED_SOLID_BLUE);
+            ledController.setPattern(DEVICE_LED_SOLID_BLUE);  // Solid blue
             sensorManager.startMeasurement();
             break;
             
         case STATE_STABILIZING:
-            ledController.setPattern(DEVICE_LED_PULSE_BLUE);
+            ledController.setPattern(DEVICE_LED_PULSE_BLUE);  // Pulsing blue
             break;
             
         case STATE_TRANSMITTING:
-            ledController.setPattern(DEVICE_LED_SOLID_CYAN);
+            ledController.setPattern(DEVICE_LED_SOLID_CYAN);  // Solid cyan
             break;
     }
 }
 
+/*
+ * Handle exiting a state.
+ * Currently no cleanup needed, but available for future use.
+ */
 void StateMachine::exitState(DeviceState state) {
-    // Cleanup
+    // Cleanup if needed
 }
 
+/*
+ * Check if current state has exceeded timeout.
+ * Used for WAITING_FOR_USER state timeout (5 minutes default).
+ */
 bool StateMachine::checkTimeout() {
     return (millis() - stateStartTime) > MEASUREMENT_TIMEOUT_MS;
 }
 
+/*
+ * Schedule the next measurement based on configured interval.
+ */
 void StateMachine::scheduleNextMeasurement() {
     nextScheduledMeasurement = millis() + config.measurementIntervalMs;
     lastMeasurementTime = millis();
 }
 
-void StateMachine::scheduleForWindowOpen() {
-    // If time isn't valid, fall back to regular interval
-    if (!Time.isValid()) {
-        scheduleNextMeasurement();
-        return;
-    }
-    
-    int currentHour = Time.hour();
-    int currentMinute = Time.minute();
-    int currentTimeMinutes = currentHour * 60 + currentMinute;
-    int startTimeMinutes = config.activeStartHour * 60 + config.activeStartMinute;
-    
-    int minutesUntilOpen;
-    
-    if (currentTimeMinutes < startTimeMinutes) {
-        // Window opens later today
-        minutesUntilOpen = startTimeMinutes - currentTimeMinutes;
-    } else {
-        // Window opens tomorrow (we're after the end time)
-        minutesUntilOpen = (24 * 60) - currentTimeMinutes + startTimeMinutes;
-    }
-    
-    // Convert to milliseconds, add 1 minute buffer
-    unsigned long msUntilOpen = ((unsigned long)minutesUntilOpen + 1) * 60000UL;
-    
-    // Cap at 12 hours to handle edge cases
-    if (msUntilOpen > 12UL * 60UL * 60UL * 1000UL) {
-        msUntilOpen = 12UL * 60UL * 60UL * 1000UL;
-    }
-    
-    nextScheduledMeasurement = millis() + msUntilOpen;
-    lastMeasurementTime = millis();
-    
-    if (DEBUG_MODE) {
-        Serial.printlnf("Scheduled wake-up in %d minutes (at ~%02d:%02d)", 
-                      minutesUntilOpen + 1,
-                      config.activeStartHour, config.activeStartMinute);
-    }
-}
-
+/*
+ * Get the configured measurement interval in milliseconds.
+ */
 unsigned long StateMachine::getMeasurementInterval() {
     return config.measurementIntervalMs;
 }
 
+/*
+ * Force start a measurement cycle.
+ * Useful for testing or manual triggers.
+ */
 void StateMachine::startMeasurementCycle() {
     setState(STATE_WAITING_FOR_USER);
 }
 
+/*
+ * Called when measurement is complete and valid.
+ * Transitions to TRANSMITTING state.
+ */
 void StateMachine::measurementComplete() {
     resetRetryCount();
     setState(STATE_TRANSMITTING);
 }
 
+/*
+ * Called when measurement fails (finger removed, invalid reading, etc.).
+ * Handles retry logic or returns to IDLE if max retries exceeded.
+ */
 void StateMachine::measurementFailed() {
     if (canRetry()) {
         incrementRetryCount();
@@ -251,15 +286,17 @@ void StateMachine::measurementFailed() {
     }
 }
 
+/*
+ * Get seconds until next scheduled measurement.
+ */
 int StateMachine::getSecondsUntilNextMeasurement() {
-    unsigned long now = millis();
-    // Use signed comparison to handle overflow
-    if ((long)(now - nextScheduledMeasurement) >= 0) {
+    if (millis() >= nextScheduledMeasurement) {
         return 0;
     }
-    return (nextScheduledMeasurement - now) / 1000;
+    return (nextScheduledMeasurement - millis()) / 1000;
 }
 
+// Retry count management
 void StateMachine::incrementRetryCount() {
     retryCount++;
 }
@@ -276,14 +313,23 @@ bool StateMachine::canRetry() {
     return retryCount < MAX_RETRY_ATTEMPTS;
 }
 
+/*
+ * Get the current state.
+ */
 DeviceState StateMachine::getCurrentState() {
     return currentState;
 }
 
+/*
+ * Check if device is waiting for user measurement input.
+ */
 bool StateMachine::isWaitingForMeasurement() {
     return currentState == STATE_WAITING_FOR_USER;
 }
 
+/*
+ * Get human-readable state name for debugging.
+ */
 const char* StateMachine::getStateName(DeviceState state) {
     switch (state) {
         case STATE_IDLE: return "IDLE";
@@ -295,10 +341,21 @@ const char* StateMachine::getStateName(DeviceState state) {
     }
 }
 
-// ==================== Time Window Management ====================
+// ============================================================================
+// Active Time Window Management
+// ============================================================================
 
+/*
+ * Check if current time is within the active measurement window.
+ * 
+ * Returns true if:
+ *   - Time hasn't synced yet (fail-open for reliability)
+ *   - Current time is within configured start-end window
+ *   
+ * Handles both normal (6:00-22:00) and overnight (22:00-6:00) windows.
+ */
 bool StateMachine::isWithinActiveWindow() {
-    // If time hasn't been synced yet, allow measurements (fail-open)
+    // If time hasn't synced, allow measurements (fail-open)
     if (!Time.isValid()) {
         if (DEBUG_MODE) {
             Serial.println("Time not synced - allowing measurement");
@@ -309,33 +366,40 @@ bool StateMachine::isWithinActiveWindow() {
     int currentHour = Time.hour();
     int currentMinute = Time.minute();
     
-    // Convert times to minutes since midnight for easy comparison
+    // Convert times to minutes since midnight for comparison
     int currentTimeMinutes = currentHour * 60 + currentMinute;
     int startTimeMinutes = config.activeStartHour * 60 + config.activeStartMinute;
     int endTimeMinutes = config.activeEndHour * 60 + config.activeEndMinute;
     
-    // Handle normal case (start < end, e.g., 6:00 - 22:00)
+    // Normal case: start < end (e.g., 6:00 - 22:00)
     if (startTimeMinutes < endTimeMinutes) {
         return (currentTimeMinutes >= startTimeMinutes && currentTimeMinutes < endTimeMinutes);
     }
-    // Handle overnight case (start > end, e.g., 22:00 - 6:00) - rare but supported
+    // Overnight case: start > end (e.g., 22:00 - 6:00)
     else if (startTimeMinutes > endTimeMinutes) {
         return (currentTimeMinutes >= startTimeMinutes || currentTimeMinutes < endTimeMinutes);
     }
-    // Start == End means always active (24 hours)
+    // Edge case: start == end means always active (24 hours)
     else {
         return true;
     }
 }
 
-// ==================== Configuration Management ====================
+// ============================================================================
+// Configuration Management
+// ============================================================================
 
+/*
+ * Get current device configuration.
+ */
 DeviceConfig StateMachine::getConfig() {
     return config;
 }
 
+/*
+ * Parse time string "HH:MM" into hour and minute integers.
+ */
 void StateMachine::parseTimeString(String timeStr, int &hour, int &minute) {
-    // Parse "HH:MM" format
     int colonIndex = timeStr.indexOf(':');
     if (colonIndex > 0) {
         hour = timeStr.substring(0, colonIndex).toInt();
@@ -345,20 +409,29 @@ void StateMachine::parseTimeString(String timeStr, int &hour, int &minute) {
         if (hour < 0 || hour > 23) hour = 0;
         if (minute < 0 || minute > 59) minute = 0;
     } else {
-        // Invalid format, use defaults
+        // Invalid format - use zeros
         hour = 0;
         minute = 0;
     }
 }
 
-void StateMachine::applyConfiguration(int frequencySeconds, String startTime, String endTime, float timezoneOffset) {
+/*
+ * Apply new configuration from server.
+ * Called by NetworkManager when config is successfully fetched.
+ * 
+ * @param frequencySeconds Measurement interval (15-14400 seconds)
+ * @param startTime Active window start "HH:MM" (empty string = no change)
+ * @param endTime Active window end "HH:MM" (empty string = no change)
+ */
+void StateMachine::applyConfiguration(int frequencySeconds, String startTime, String endTime) {
     // Update measurement interval (convert seconds to milliseconds)
     if (frequencySeconds > 0) {
-        // Validate: minimum 15 minutes (900s), maximum 4 hours (14400s)
-        if (frequencySeconds >= 900 && frequencySeconds <= 14400) {
+        // Validate: minimum 15 seconds, maximum 4 hours (14400s)
+        // Short intervals (30s, 60s) allowed for testing/demo
+        if (frequencySeconds >= 15 && frequencySeconds <= 14400) {
             config.measurementIntervalMs = (unsigned long)frequencySeconds * 1000UL;
         } else if (DEBUG_MODE) {
-            Serial.printlnf("Invalid frequency %d seconds - ignoring", frequencySeconds);
+            Serial.printlnf("Invalid frequency %d seconds (must be 15-14400s) - ignoring", frequencySeconds);
         }
     }
     
@@ -372,14 +445,6 @@ void StateMachine::applyConfiguration(int frequencySeconds, String startTime, St
         parseTimeString(endTime, config.activeEndHour, config.activeEndMinute);
     }
     
-    // Update timezone offset (valid range: -12 to +14 hours)
-    if (timezoneOffset >= -12.0f && timezoneOffset <= 14.0f) {
-        if (config.timezoneOffset != timezoneOffset) {
-            config.timezoneOffset = timezoneOffset;
-            applyTimezone(timezoneOffset);
-        }
-    }
-    
     // Mark config as valid (received from server)
     config.configValid = true;
     
@@ -388,92 +453,11 @@ void StateMachine::applyConfiguration(int frequencySeconds, String startTime, St
         Serial.printlnf("  Interval: %lu ms (%lu min)", 
                         config.measurementIntervalMs,
                         config.measurementIntervalMs / 60000);
-        Serial.printlnf("  Active window: %02d:%02d - %02d:%02d (local time)",
+        Serial.printlnf("  Active window: %02d:%02d - %02d:%02d",
                         config.activeStartHour, config.activeStartMinute,
                         config.activeEndHour, config.activeEndMinute);
-        Serial.printlnf("  Timezone: UTC%+.1f", config.timezoneOffset);
-        if (Time.isValid()) {
-            Serial.printlnf("  Current local time: %02d:%02d", Time.hour(), Time.minute());
-        }
     }
-    
-    // Save to EEPROM for persistence across reboots
-    saveConfigToEEPROM();
     
     // Reschedule next measurement with new interval
     scheduleNextMeasurement();
-}
-
-void StateMachine::applyTimezone(float offset) {
-    // Particle's Time.zone() accepts offset in hours (float for fractional like India +5.5)
-    Time.zone(offset);
-    
-    if (DEBUG_MODE) {
-        Serial.printlnf("Timezone set to UTC%+.1f", offset);
-        if (Time.isValid()) {
-            Serial.printlnf("Local time now: %s", Time.format("%Y-%m-%d %H:%M:%S").c_str());
-        }
-    }
-}
-
-// ==================== EEPROM Config Persistence ====================
-
-void StateMachine::saveConfigToEEPROM() {
-    int addr = EEPROM_CONFIG_ADDR;
-    
-    // Write marker to indicate valid config
-    EEPROM.put(addr, (uint16_t)EEPROM_CONFIG_VALID_MARKER);
-    addr += sizeof(uint16_t);
-    
-    // Write config struct
-    EEPROM.put(addr, config);
-    
-    if (DEBUG_MODE) {
-        Serial.println("Configuration saved to EEPROM");
-    }
-}
-
-void StateMachine::loadConfigFromEEPROM() {
-    int addr = EEPROM_CONFIG_ADDR;
-    uint16_t marker;
-    
-    EEPROM.get(addr, marker);
-    
-    if (marker == EEPROM_CONFIG_VALID_MARKER) {
-        addr += sizeof(uint16_t);
-        EEPROM.get(addr, config);
-        
-        // Validate loaded values
-        if (config.measurementIntervalMs < 900000 || config.measurementIntervalMs > 14400000) {
-            config.measurementIntervalMs = MEASUREMENT_INTERVAL_MS;
-        }
-        if (config.activeStartHour > 23) config.activeStartHour = DEFAULT_START_HOUR;
-        if (config.activeEndHour > 23) config.activeEndHour = DEFAULT_END_HOUR;
-        if (config.activeStartMinute > 59) config.activeStartMinute = DEFAULT_START_MINUTE;
-        if (config.activeEndMinute > 59) config.activeEndMinute = DEFAULT_END_MINUTE;
-        
-        // Validate timezone offset (valid range: -12 to +14 hours)
-        if (config.timezoneOffset < -12.0f || config.timezoneOffset > 14.0f || isnan(config.timezoneOffset)) {
-            config.timezoneOffset = DEFAULT_TIMEZONE_OFFSET;
-        }
-        
-        // Apply the saved timezone
-        applyTimezone(config.timezoneOffset);
-        
-        if (DEBUG_MODE) {
-            Serial.println("Configuration loaded from EEPROM:");
-            Serial.printlnf("  Interval: %lu ms (%lu min)", 
-                            config.measurementIntervalMs,
-                            config.measurementIntervalMs / 60000);
-            Serial.printlnf("  Active window: %02d:%02d - %02d:%02d (local time)",
-                            config.activeStartHour, config.activeStartMinute,
-                            config.activeEndHour, config.activeEndMinute);
-            Serial.printlnf("  Timezone: UTC%+.1f", config.timezoneOffset);
-        }
-    } else {
-        if (DEBUG_MODE) {
-            Serial.println("No saved configuration found - using defaults");
-        }
-        setDefaultConfig();
-    }
 }

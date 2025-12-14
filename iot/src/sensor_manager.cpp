@@ -1,3 +1,19 @@
+/*
+ * sensor_manager.cpp - MAX30102/MAX30105 Sensor Implementation
+ * 
+ * Implements pulse oximetry using the SparkFun MAX3010x library.
+ * Collects samples from the sensor and calculates heart rate and SpO2.
+ * 
+ * ALGORITHM:
+ *   Uses maxim_heart_rate_and_oxygen_saturation() from spo2_algorithm.h
+ *   Requires 100 samples to calculate initial reading
+ *   Continuously updates with 25-sample sliding window
+ * 
+ * TIMING:
+ *   - Initial buffer fill: ~4 seconds (100 samples at 25 Hz)
+ *   - Measurement timeout: 60 seconds max
+ */
+
 #include "sensor_manager.h"
 #include "config.h"
 #include "state_machine.h"
@@ -14,22 +30,22 @@ SensorManager::SensorManager() {
     bufferFilled = false;
     measuring = false;
     measurementStartTime = 0;
-    validSampleCount = 0;
     
+    // Initialize buffers to zero
     for (int i = 0; i < 100; i++) {
         irBuffer[i] = 0;
         redBuffer[i] = 0;
     }
-    
-    for (int i = 0; i < MAX_VALID_SAMPLES; i++) {
-        hrSamples[i] = 0;
-        spo2Samples[i] = 0;
-    }
 }
 
+/*
+ * Initialize the MAX30102/MAX30105 sensor.
+ * Configures I2C, LED brightness, sample rate, and pulse width.
+ */
 bool SensorManager::begin() {
     if (DEBUG_MODE) Serial.println("Initializing MAX30102...");
     
+    // Initialize sensor on I2C bus
     if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {
         if (DEBUG_MODE) Serial.println("ERROR: MAX30102 not found!");
         return false;
@@ -37,26 +53,33 @@ bool SensorManager::begin() {
     
     if (DEBUG_MODE) Serial.println("MAX30102 found!");
     
-    byte ledBrightness = 60;
-    byte sampleAverage = 4;
-    byte ledMode = 2;
-    byte sampleRate = 100;
-    int pulseWidth = 411;
-    int adcRange = 4096;
+    // Sensor configuration
+    byte ledBrightness = 60;    // LED current (0-255)
+    byte sampleAverage = 4;     // Samples to average (1, 2, 4, 8, 16, 32)
+    byte ledMode = 2;           // 2 = Red + IR for SpO2
+    byte sampleRate = 100;      // Samples per second (50, 100, 200, 400, 800, 1000, 1600, 3200)
+    int pulseWidth = 411;       // LED pulse width in µs (69, 118, 215, 411)
+    int adcRange = 4096;        // ADC range (2048, 4096, 8192, 16384)
     
     particleSensor.setup(ledBrightness, sampleAverage, ledMode, 
                         sampleRate, pulseWidth, adcRange);
     
-    particleSensor.setPulseAmplitudeRed(0x0A);
-    particleSensor.setPulseAmplitudeGreen(0);
+    // Configure LED amplitudes
+    particleSensor.setPulseAmplitudeRed(0x0A);  // Low red LED
+    particleSensor.setPulseAmplitudeGreen(0);   // Green LED off
     
     if (DEBUG_MODE) Serial.println("MAX30102 initialized successfully");
     return true;
 }
 
+/*
+ * Main update loop - handles measurement state machine.
+ * Called from main loop() when in MEASURING or STABILIZING state.
+ */
 void SensorManager::update() {
     if (!measuring) return;
     
+    // Check if finger is still present
     long irValue = particleSensor.getIR();
     
     if (irValue < FINGER_THRESHOLD) {
@@ -66,116 +89,66 @@ void SensorManager::update() {
         return;
     }
     
+    // Phase 1: Fill initial buffer (100 samples)
     if (!bufferFilled) {
         collectInitialBuffer();
         return;
     }
     
+    // Phase 2: Continuous measurement with sliding window
     updateBuffer();
     calculateMetrics();
     
-    // Check if this reading is valid
+    // Check if we have a valid reading
     if (validHeartRate && validSPO2) {
-        bool hrValid = (heartRate >= MIN_HEART_RATE && heartRate <= MAX_HEART_RATE);
-        bool spo2Valid = (spo2 >= MIN_SPO2 && spo2 <= MAX_SPO2);
+        currentMeasurement.heartRate = heartRate;
+        currentMeasurement.spO2 = spo2;
+        currentMeasurement.timestamp = Time.now();
+        currentMeasurement.valid = validateMeasurement();
+        currentMeasurement.confidence = 0.95;
         
-        if (hrValid && spo2Valid) {
-            // Store this valid sample
-            hrSamples[validSampleCount] = heartRate;
-            spo2Samples[validSampleCount] = spo2;
-            validSampleCount++;
-            
+        if (currentMeasurement.valid) {
             if (DEBUG_MODE) {
-                Serial.printlnf("Valid sample %d/%d: HR=%ld, SpO2=%ld%%", 
-                              validSampleCount, MIN_VALID_SAMPLES,
+                Serial.printlnf("Valid: HR=%ld bpm, SpO2=%ld%%", 
                               (long)heartRate, (long)spo2);
-            }
-            
-            // Check if we have enough samples
-            if (validSampleCount >= MIN_VALID_SAMPLES) {
-                // Calculate variance to check stability
-                float hrVariance = calculateVariance(hrSamples, validSampleCount);
-                float spo2Variance = calculateVariance(spo2Samples, validSampleCount);
-                
-                // Accept if variance is acceptable OR we have max samples
-                if ((hrVariance <= MAX_HR_VARIANCE && spo2Variance <= MAX_SPO2_VARIANCE) ||
-                    validSampleCount >= MAX_VALID_SAMPLES) {
-                    
-                    // Calculate averages
-                    float avgHR = 0, avgSpO2 = 0;
-                    for (int i = 0; i < validSampleCount; i++) {
-                        avgHR += hrSamples[i];
-                        avgSpO2 += spo2Samples[i];
-                    }
-                    avgHR /= validSampleCount;
-                    avgSpO2 /= validSampleCount;
-                    
-                    currentMeasurement.heartRate = avgHR;
-                    currentMeasurement.spO2 = avgSpO2;
-                    currentMeasurement.timestamp = Time.now();
-                    currentMeasurement.valid = true;
-                    currentMeasurement.confidence = calculateConfidence();
-                    
-                    if (DEBUG_MODE) {
-                        Serial.printlnf("Final (avg of %d): HR=%.1f bpm, SpO2=%.1f%%, confidence=%.2f", 
-                                      validSampleCount, avgHR, avgSpO2, 
-                                      currentMeasurement.confidence);
-                    }
-                    
-                    measuring = false;
-                    stateMachine.measurementComplete();
-                    return;
-                }
-            }
-        }
-    }
-    
-    if (millis() - measurementStartTime > 60000) {
-        // Timeout - but if we have any valid samples, use them
-        if (validSampleCount > 0) {
-            float avgHR = 0, avgSpO2 = 0;
-            for (int i = 0; i < validSampleCount; i++) {
-                avgHR += hrSamples[i];
-                avgSpO2 += spo2Samples[i];
-            }
-            avgHR /= validSampleCount;
-            avgSpO2 /= validSampleCount;
-            
-            currentMeasurement.heartRate = avgHR;
-            currentMeasurement.spO2 = avgSpO2;
-            currentMeasurement.timestamp = Time.now();
-            currentMeasurement.valid = true;
-            currentMeasurement.confidence = calculateConfidence() * 0.8f; // Lower confidence
-            
-            if (DEBUG_MODE) {
-                Serial.printlnf("Timeout - using %d samples: HR=%.1f, SpO2=%.1f%%", 
-                              validSampleCount, avgHR, avgSpO2);
             }
             measuring = false;
             stateMachine.measurementComplete();
-        } else {
-            if (DEBUG_MODE) Serial.println("Measurement timeout - no valid samples");
-            resetMeasurement();
-            stateMachine.measurementFailed();
+            return;
         }
+    }
+    
+    // Check for measurement timeout (60 seconds)
+    if (millis() - measurementStartTime > 60000) {
+        if (DEBUG_MODE) Serial.println("Measurement timeout");
+        resetMeasurement();
+        stateMachine.measurementFailed();
     }
 }
 
+/*
+ * Collect initial 100 samples to fill the buffer.
+ * Shows progress every 25 samples.
+ */
 void SensorManager::collectInitialBuffer() {
+    // Progress indicator
     if (DEBUG_MODE && bufferIndex % 25 == 0) {
         Serial.printlnf("Collecting: %d/100", bufferIndex);
     }
     
+    // Wait for sample to be available
     while (particleSensor.available() == false) {
         particleSensor.check();
     }
     
+    // Store sample
     redBuffer[bufferIndex] = particleSensor.getRed();
     irBuffer[bufferIndex] = particleSensor.getIR();
     particleSensor.nextSample();
     
     bufferIndex++;
     
+    // Buffer full - calculate first reading
     if (bufferIndex >= 100) {
         bufferFilled = true;
         bufferIndex = 0;
@@ -185,12 +158,18 @@ void SensorManager::collectInitialBuffer() {
     }
 }
 
+/*
+ * Update buffer with 25 new samples using sliding window.
+ * Shifts old samples and adds new ones.
+ */
 void SensorManager::updateBuffer() {
+    // Shift old samples (drop oldest 25, keep newest 75)
     for (byte i = 25; i < 100; i++) {
         redBuffer[i - 25] = redBuffer[i];
         irBuffer[i - 25] = irBuffer[i];
     }
     
+    // Collect 25 new samples
     for (byte i = 75; i < 100; i++) {
         while (particleSensor.available() == false) {
             particleSensor.check();
@@ -202,6 +181,10 @@ void SensorManager::updateBuffer() {
     }
 }
 
+/*
+ * Calculate heart rate and SpO2 using SparkFun algorithm.
+ * Results are stored in class variables.
+ */
 void SensorManager::calculateMetrics() {
     maxim_heart_rate_and_oxygen_saturation(
         irBuffer, 
@@ -220,11 +203,19 @@ void SensorManager::calculateMetrics() {
     }
 }
 
+/*
+ * Check if finger is currently detected on sensor.
+ * Uses IR value threshold from config.h.
+ */
 bool SensorManager::isFingerDetected() {
     long irValue = particleSensor.getIR();
     return (irValue >= FINGER_THRESHOLD);
 }
 
+/*
+ * Start a new measurement cycle.
+ * Resets state and begins data collection.
+ */
 void SensorManager::startMeasurement() {
     resetMeasurement();
     measuring = true;
@@ -233,14 +224,25 @@ void SensorManager::startMeasurement() {
     if (DEBUG_MODE) Serial.println("Starting measurement...");
 }
 
+/*
+ * Check if current measurement is complete and valid.
+ */
 bool SensorManager::isMeasurementComplete() {
     return !measuring && currentMeasurement.valid;
 }
 
+/*
+ * Get the completed measurement data.
+ */
 MeasurementData SensorManager::getMeasurement() {
     return currentMeasurement;
 }
 
+/*
+ * Validate reading against physiological limits.
+ * Heart rate: 40-200 BPM
+ * SpO2: 70-100%
+ */
 bool SensorManager::validateMeasurement() {
     bool hrValid = (heartRate >= MIN_HEART_RATE && 
                     heartRate <= MAX_HEART_RATE);
@@ -250,6 +252,10 @@ bool SensorManager::validateMeasurement() {
     return (hrValid && spo2Valid && validHeartRate && validSPO2);
 }
 
+/*
+ * Reset measurement state.
+ * Called when starting new measurement or on failure.
+ */
 void SensorManager::resetMeasurement() {
     measuring = false;
     bufferFilled = false;
@@ -257,49 +263,4 @@ void SensorManager::resetMeasurement() {
     currentMeasurement.valid = false;
     validHeartRate = 0;
     validSPO2 = 0;
-    validSampleCount = 0;
-    
-    for (int i = 0; i < MAX_VALID_SAMPLES; i++) {
-        hrSamples[i] = 0;
-        spo2Samples[i] = 0;
-    }
-}
-
-float SensorManager::calculateVariance(float* samples, int count) {
-    if (count < 2) return 0;
-    
-    float mean = 0;
-    for (int i = 0; i < count; i++) {
-        mean += samples[i];
-    }
-    mean /= count;
-    
-    float variance = 0;
-    for (int i = 0; i < count; i++) {
-        float diff = samples[i] - mean;
-        variance += diff * diff;
-    }
-    variance /= count;
-    
-    return sqrt(variance);  // Return standard deviation
-}
-
-float SensorManager::calculateConfidence() {
-    if (validSampleCount == 0) return 0.0f;
-    
-    float hrStdDev = calculateVariance(hrSamples, validSampleCount);
-    float spo2StdDev = calculateVariance(spo2Samples, validSampleCount);
-    
-    // Base confidence on number of samples and variance
-    float sampleBonus = (float)validSampleCount / MAX_VALID_SAMPLES;  // 0.6 to 1.0
-    
-    // Penalize for high variance (lower is better)
-    float hrPenalty = min(hrStdDev / MAX_HR_VARIANCE, 1.0f);
-    float spo2Penalty = min(spo2StdDev / MAX_SPO2_VARIANCE, 1.0f);
-    float variancePenalty = (hrPenalty + spo2Penalty) / 2.0f;
-    
-    // Confidence = base (0.7) + sample bonus (up to 0.2) - variance penalty (up to 0.2)
-    float confidence = 0.7f + (sampleBonus * 0.2f) - (variancePenalty * 0.2f);
-    
-    return max(0.5f, min(0.99f, confidence));  // Clamp between 0.5 and 0.99
 }
