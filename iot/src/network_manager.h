@@ -20,7 +20,10 @@
  *   - Measurement transmission to POST /api/measurements
  *   - User timeout notifications to POST /api/notifications  
  *   - Device config fetching from GET /api/devices/{id}/config
- *   - Offline storage in EEPROM with auto-sync on reconnect
+ *   - Offline storage in EEPROM with auto-sync on reconnect:
+ *     * Measurements: Up to 48 stored offline
+ *     * Timeout notifications: Up to 24 stored offline
+ *     * Data persists across device reboots
  */
 
 #ifndef NETWORK_MANAGER_H
@@ -43,6 +46,20 @@ struct StoredMeasurement {
     bool transmitted;     // True if already sent to server
 };
 
+/*
+ * StoredTimeout - Structure for offline timeout event storage
+ * 
+ * When WiFi is unavailable, timeout notifications are stored in EEPROM
+ * and automatically synced when connectivity is restored.
+ */
+struct StoredTimeout {
+    uint32_t timestamp;   // Unix timestamp of timeout event
+    bool transmitted;     // True if already sent to server
+};
+
+// Maximum number of timeout events to store offline
+#define MAX_STORED_TIMEOUTS 24
+
 // Forward declaration for static webhook callback
 class NetworkManager;
 
@@ -53,11 +70,12 @@ extern NetworkManager* networkManagerInstance;
  * NetworkManager - Handles API communication and offline storage
  * 
  * Primary responsibilities:
- *   1. Transmit measurements to API server
+ *   1. Transmit measurements to API server (or store if offline)
  *   2. Fetch device configuration from server
- *   3. Send timeout notifications
- *   4. Store measurements offline when disconnected
- *   5. Sync stored measurements when reconnected
+ *   3. Send timeout notifications (or store if offline)
+ *   4. Store measurements offline when disconnected (up to 48)
+ *   5. Store timeout notifications offline when disconnected (up to 24)
+ *   6. Auto-sync all stored data when WiFi reconnects
  */
 class NetworkManager {
 public:
@@ -104,8 +122,21 @@ public:
     /*
      * Send notification when user fails to respond to measurement prompt.
      * Posts to /api/notifications endpoint.
+     * If offline, stores timeout for later transmission.
      */
     bool sendTimeoutNotification();
+    
+    /*
+     * Store timeout notification in EEPROM for later transmission.
+     * Called when device is offline.
+     */
+    void storeTimeoutNotification(uint32_t timestamp);
+    
+    /*
+     * Sync stored timeout notifications to server.
+     * Called automatically when WiFi reconnects.
+     */
+    void syncStoredTimeouts();
     
     /*
      * Fetch device configuration from server.
@@ -141,10 +172,15 @@ private:
     static const int MAX_CONFIG_FETCH_ATTEMPTS = 3;
     unsigned long configRequestTime; // For webhook response timeout
     
-    // Offline storage
+    // Offline storage - measurements
     StoredMeasurement storage[MAX_STORED_MEASUREMENTS];
     int storageIndex;
     int storedCount;
+    
+    // Offline storage - timeout notifications
+    StoredTimeout timeoutStorage[MAX_STORED_TIMEOUTS];
+    int timeoutStorageIndex;
+    int storedTimeoutCount;
     
     /*
      * POST measurement JSON to API server.
@@ -171,6 +207,8 @@ private:
     void saveToEEPROM();
     void loadFromEEPROM();
     int findNextStoredMeasurement();
+    int findNextStoredTimeout();
+    bool postTimeoutNotification(String jsonPayload);
     
     // JSON parsing helpers for config response
     String extractJsonValue(String json, String key);

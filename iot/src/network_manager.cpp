@@ -15,6 +15,13 @@
  *   - Webhooks configured in Particle Console forward to Vercel
  *   - Events: heartrate-measurement, heartrate-timeout, heartrate-getconfig
  * 
+ * OFFLINE MODE:
+ *   When WiFi/Cloud is unavailable, data is stored locally in EEPROM:
+ *   - Measurements: Up to 48 stored (circular buffer, ~24h at 30-min intervals)
+ *   - Timeout notifications: Up to 24 stored (circular buffer)
+ *   - Auto-sync: Stored data transmitted automatically when connection restored
+ *   - Persistence: Data survives device reboot
+ * 
  * See WEBHOOK_SETUP.md for webhook configuration instructions.
  */
 
@@ -55,6 +62,8 @@ NetworkManager::NetworkManager() {
     configRequestTime = 0;
     storageIndex = 0;
     storedCount = 0;
+    timeoutStorageIndex = 0;
+    storedTimeoutCount = 0;
 }
 
 /*
@@ -159,6 +168,11 @@ void NetworkManager::update() {
         if (wifiConnected && storedCount > 0) {
             syncStoredMeasurements();
         }
+        
+        // Sync stored timeout notifications when connected
+        if (wifiConnected && storedTimeoutCount > 0) {
+            syncStoredTimeouts();
+        }
     }
     
     // Check for config fetch timeout (webhook mode only)
@@ -222,9 +236,15 @@ bool NetworkManager::isConnected() {
  */
 bool NetworkManager::transmitMeasurement(MeasurementData data) {
     if (!isConnected()) {
-        if (DEBUG_MODE) Serial.println("No connection - storing measurement locally");
+        if (DEBUG_MODE) {
+            Serial.println("No connection - storing measurement locally");
+            Serial.println("Measurement will be sent when connection is restored");
+        }
         storeMeasurement(data);
         ledController.flashWarning();  // Yellow flash = stored offline
+        if (DEBUG_MODE) {
+            Serial.printlnf("Measurement STORED locally (%d/%d)", storedCount, MAX_STORED_MEASUREMENTS);
+        }
         stateMachine.setState(STATE_IDLE);
         stateMachine.scheduleNextMeasurement();
         return false;
@@ -378,15 +398,26 @@ bool NetworkManager::postMeasurement(String jsonPayload) {
 /*
  * Send notification when user doesn't respond to measurement prompt.
  * Posts to /api/notifications endpoint.
+ * If offline, stores timeout for later transmission.
  */
 bool NetworkManager::sendTimeoutNotification() {
+    uint32_t currentTimestamp = Time.now();
+    
     if (!isConnected()) {
-        if (DEBUG_MODE) Serial.println("Cannot send timeout notification - not connected");
+        if (DEBUG_MODE) {
+            Serial.println("No connection - storing timeout notification locally");
+            Serial.println("Timeout will be sent when connection is restored");
+        }
+        storeTimeoutNotification(currentTimestamp);
+        ledController.flashWarning();  // Yellow flash = stored offline
+        if (DEBUG_MODE) {
+            Serial.printlnf("Timeout STORED locally (%d/%d)", storedTimeoutCount, MAX_STORED_TIMEOUTS);
+        }
         return false;
     }
     
     String deviceID = System.deviceID();
-    String timestampISO = Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL);
+    String timestampISO = Time.format(currentTimestamp, TIME_FORMAT_ISO8601_FULL);
     
     // Create JSON payload for timeout notification
     String jsonPayload = "{";
@@ -405,6 +436,28 @@ bool NetworkManager::sendTimeoutNotification() {
         Serial.println(jsonPayload);
     }
     
+    bool success = postTimeoutNotification(jsonPayload);
+    
+    if (success) {
+        if (DEBUG_MODE) {
+            Serial.println("Timeout notification sent successfully");
+        }
+    } else {
+        // Failed to send - store for later
+        if (DEBUG_MODE) {
+            Serial.println("Failed to send timeout - storing locally for later");
+        }
+        storeTimeoutNotification(currentTimestamp);
+    }
+    
+    return success;
+}
+
+/*
+ * Post timeout notification to server.
+ * Internal function used by sendTimeoutNotification and syncStoredTimeouts.
+ */
+bool NetworkManager::postTimeoutNotification(String jsonPayload) {
     #if USE_WEBHOOK
     // ===== WEBHOOK MODE =====
     if (!Particle.connected()) {
@@ -464,11 +517,6 @@ bool NetworkManager::sendTimeoutNotification() {
     }
     
     httpClient.stop();
-    
-    if (DEBUG_MODE) {
-        Serial.printlnf("Timeout notification %s", success ? "sent successfully" : "failed");
-    }
-    
     return success;
     #endif
 }
@@ -874,6 +922,10 @@ void NetworkManager::syncStoredMeasurements() {
     int index = findNextStoredMeasurement();
     if (index < 0) return;
     
+    if (DEBUG_MODE) {
+        Serial.println("Syncing stored measurement to server...");
+    }
+    
     MeasurementData data;
     data.heartRate = storage[index].heartRate;
     data.spO2 = storage[index].spO2;
@@ -889,13 +941,87 @@ void NetworkManager::syncStoredMeasurements() {
         saveToEEPROM();
         
         if (DEBUG_MODE) {
-            Serial.printlnf("Synced stored measurement (%d remaining)", storedCount);
+            Serial.printlnf("Stored measurement synced successfully (%d remaining)", storedCount);
+        }
+        ledController.flashSuccess();  // Green flash = sync success
+    }
+}
+
+/*
+ * Store timeout notification in EEPROM for later transmission.
+ * Uses circular buffer - oldest events are overwritten when full.
+ */
+void NetworkManager::storeTimeoutNotification(uint32_t timestamp) {
+    if (storedTimeoutCount >= MAX_STORED_TIMEOUTS) {
+        if (DEBUG_MODE) Serial.println("Timeout storage full - overwriting oldest");
+        timeoutStorageIndex = 0;
+    }
+    
+    timeoutStorage[timeoutStorageIndex].timestamp = timestamp;
+    timeoutStorage[timeoutStorageIndex].transmitted = false;
+    
+    timeoutStorageIndex = (timeoutStorageIndex + 1) % MAX_STORED_TIMEOUTS;
+    if (storedTimeoutCount < MAX_STORED_TIMEOUTS) storedTimeoutCount++;
+    
+    saveToEEPROM();
+}
+
+/*
+ * Sync one stored timeout notification to server.
+ * Called periodically when connected and stored timeouts exist.
+ */
+void NetworkManager::syncStoredTimeouts() {
+    if (storedTimeoutCount == 0) return;
+    
+    int index = findNextStoredTimeout();
+    if (index < 0) return;
+    
+    if (DEBUG_MODE) {
+        Serial.println("Syncing stored timeout notification to server...");
+    }
+    
+    String deviceID = System.deviceID();
+    String timestampISO = Time.format(timeoutStorage[index].timestamp, TIME_FORMAT_ISO8601_FULL);
+    
+    // Create JSON payload for timeout notification
+    String jsonPayload = "{";
+    jsonPayload += "\"deviceId\":\"" + deviceID + "\",";
+    jsonPayload += "\"type\":\"user_timeout\",";
+    jsonPayload += "\"message\":\"User did not place finger on sensor within timeout period\",";
+    jsonPayload += "\"timestamp\":\"" + timestampISO + "\"";
+    #if USE_WEBHOOK
+    jsonPayload += ",\"apiKey\":\"" + String(API_KEY) + "\"";
+    #endif
+    jsonPayload += "}";
+    
+    if (postTimeoutNotification(jsonPayload)) {
+        timeoutStorage[index].transmitted = true;
+        storedTimeoutCount--;
+        saveToEEPROM();
+        
+        if (DEBUG_MODE) {
+            Serial.printlnf("Stored timeout synced successfully (%d remaining)", storedTimeoutCount);
+        }
+        ledController.flashSuccess();  // Green flash = sync success
+    }
+}
+
+/*
+ * Find next timeout that hasn't been transmitted.
+ */
+int NetworkManager::findNextStoredTimeout() {
+    for (int i = 0; i < MAX_STORED_TIMEOUTS; i++) {
+        if (!timeoutStorage[i].transmitted && timeoutStorage[i].timestamp > 0) {
+            return i;
         }
     }
+    return -1;
 }
 
 void NetworkManager::saveToEEPROM() {
     int addr = EEPROM_MEASUREMENTS_ADDR;
+    
+    // Save measurements
     EEPROM.put(addr, storageIndex);
     addr += sizeof(int);
     EEPROM.put(addr, storedCount);
@@ -905,16 +1031,29 @@ void NetworkManager::saveToEEPROM() {
         EEPROM.put(addr, storage[i]);
         addr += sizeof(StoredMeasurement);
     }
+    
+    // Save timeout notifications (after measurements)
+    EEPROM.put(addr, timeoutStorageIndex);
+    addr += sizeof(int);
+    EEPROM.put(addr, storedTimeoutCount);
+    addr += sizeof(int);
+    
+    for (int i = 0; i < MAX_STORED_TIMEOUTS; i++) {
+        EEPROM.put(addr, timeoutStorage[i]);
+        addr += sizeof(StoredTimeout);
+    }
 }
 
 void NetworkManager::loadFromEEPROM() {
     int addr = EEPROM_MEASUREMENTS_ADDR;
+    
+    // Load measurements
     EEPROM.get(addr, storageIndex);
     addr += sizeof(int);
     EEPROM.get(addr, storedCount);
     addr += sizeof(int);
     
-    // Validate loaded values
+    // Validate loaded measurement values
     if (storageIndex < 0 || storageIndex >= MAX_STORED_MEASUREMENTS) {
         storageIndex = 0;
     }
@@ -927,8 +1066,32 @@ void NetworkManager::loadFromEEPROM() {
         addr += sizeof(StoredMeasurement);
     }
     
-    if (DEBUG_MODE && storedCount > 0) {
-        Serial.printlnf("Loaded %d measurements from EEPROM", storedCount);
+    // Load timeout notifications
+    EEPROM.get(addr, timeoutStorageIndex);
+    addr += sizeof(int);
+    EEPROM.get(addr, storedTimeoutCount);
+    addr += sizeof(int);
+    
+    // Validate loaded timeout values
+    if (timeoutStorageIndex < 0 || timeoutStorageIndex >= MAX_STORED_TIMEOUTS) {
+        timeoutStorageIndex = 0;
+    }
+    if (storedTimeoutCount < 0 || storedTimeoutCount > MAX_STORED_TIMEOUTS) {
+        storedTimeoutCount = 0;
+    }
+    
+    for (int i = 0; i < MAX_STORED_TIMEOUTS; i++) {
+        EEPROM.get(addr, timeoutStorage[i]);
+        addr += sizeof(StoredTimeout);
+    }
+    
+    if (DEBUG_MODE) {
+        if (storedCount > 0) {
+            Serial.printlnf("Loaded %d measurements from EEPROM (pending sync)", storedCount);
+        }
+        if (storedTimeoutCount > 0) {
+            Serial.printlnf("Loaded %d timeout notifications from EEPROM (pending sync)", storedTimeoutCount);
+        }
     }
 }
 

@@ -17,6 +17,13 @@
  *   - USE_WEBHOOK false: Direct HTTP to local API server (for development)
  *   - USE_WEBHOOK true:  Particle webhooks to Vercel HTTPS API (for production)
  * 
+ * OFFLINE MODE:
+ *   When WiFi is not available, the device operates in offline mode:
+ *   - Measurements are stored locally in EEPROM (up to 48 measurements)
+ *   - Timeout notifications are stored locally (up to 24 timeouts)
+ *   - All stored data is automatically synced when WiFi reconnects
+ *   - Yellow LED flash indicates data stored locally
+ * 
  * CONFIGURATION:
  *   Edit src/config.h to set:
  *   - WiFi credentials (WIFI_SSID, WIFI_PASSWORD)
@@ -63,11 +70,14 @@ NetworkManager networkManager;
  * Initialization sequence:
  *   1. Serial port for debugging
  *   2. LED controller for visual feedback
- *   3. WiFi connection
+ *   3. WiFi connection (30 second timeout, enters offline mode if fails)
  *   4. Particle Cloud connection (for time sync and webhooks)
  *   5. MAX30102 sensor initialization
- *   6. Network manager (loads stored measurements, sets up webhooks)
+ *   6. Network manager (loads stored measurements/timeouts, sets up webhooks)
  *   7. State machine (schedules first measurement)
+ * 
+ * Note: If WiFi connection fails, device operates in offline mode.
+ *       Measurements and timeouts are stored locally until WiFi reconnects.
  */
 void setup() {
     // Initialize serial for debug output
@@ -85,7 +95,16 @@ void setup() {
     ledController.setPattern(DEVICE_LED_SOLID_CYAN);
     
     // ===== WiFi Connection =====
+    // Note: Particle devices persist WiFi credentials in flash memory.
+    // To test offline mode, either:
+    //   1. Uncomment WiFi.clearCredentials() below
+    //   2. Use invalid credentials in config.h
+    //   3. Turn off your WiFi router
     Serial.println("Connecting to WiFi...");
+    
+    // Uncomment the line below to clear all saved WiFi credentials (for testing offline mode)
+    // WiFi.clearCredentials();
+    
     WiFi.setCredentials(WIFI_SSID, WIFI_PASSWORD);
     WiFi.connect();
     
@@ -100,9 +119,14 @@ void setup() {
     if (WiFi.ready()) {
         Serial.println("WiFi Connected");
         Serial.printlnf("IP: %s", WiFi.localIP().toString().c_str());
-        Serial.printlnf("RSSI: %d dBm", WiFi.RSSI());
+        int rssi = WiFi.RSSI();
+        if (rssi < 0 && rssi > -100) {
+            Serial.printlnf("RSSI: %d dBm", rssi);
+        } else {
+            Serial.println("RSSI: (unavailable)");
+        }
     } else {
-        Serial.println("WiFi failed - offline mode");
+        Serial.println("WiFi Not Connected - offline mode");
     }
     
     // ===== Particle Cloud Connection =====
@@ -149,7 +173,12 @@ void setup() {
  *   - stateMachine: State transitions, scheduling, timeouts
  *   - sensorManager: Sample collection, measurement processing
  *   - ledController: LED pattern animations
- *   - networkManager: Connection monitoring, config fetching, stored measurement sync
+ *   - networkManager: Connection monitoring, config fetching, offline data sync
+ * 
+ * NetworkManager handles:
+ *   - Syncing stored measurements when WiFi reconnects
+ *   - Syncing stored timeout notifications when WiFi reconnects
+ *   - Periodic config fetching from server
  * 
  * Special handling for TRANSMITTING state to coordinate between
  * SensorManager (measurement complete) and NetworkManager (transmission).

@@ -15,8 +15,11 @@ Firmware for the Particle Photon 2 IoT device that interfaces with the MAX30102/
 - **Heart Rate & SpO2 Measurement** – Accurate pulse oximetry using the MAX30102/MAX30105 sensor
 - **State Machine Architecture** – Robust state management for measurement lifecycle
 - **Configurable Scheduling** – Server-controlled measurement frequency and active time windows
-- **Offline Storage** – EEPROM-based storage for up to 48 measurements when WiFi is unavailable
-- **Auto-Sync** – Automatic transmission of stored measurements when connectivity is restored
+- **Offline Storage** – EEPROM-based storage when WiFi is unavailable:
+  - Up to 48 measurements stored offline
+  - Up to 24 timeout notifications stored offline
+  - Data persists across device reboots
+- **Auto-Sync** – Automatic transmission of all stored data when connectivity is restored
 - **Visual Feedback** – RGB LED patterns indicate device status and measurement results
 - **Dual Connection Modes** – Switch between localhost (HTTP) and Vercel (HTTPS via webhooks)
 
@@ -91,7 +94,7 @@ The firmware implements a synchronous state machine with five states:
 | **WAITING_FOR_USER** | Prompting user to place finger on sensor | Blue blinking |
 | **MEASURING** | Collecting sensor samples | Solid blue |
 | **STABILIZING** | Averaging readings for accuracy | Pulsing blue |
-| **TRANSMITTING** | Sending data to server | Cyan → Green (success) / Yellow (stored) |
+| **TRANSMITTING** | Sending data to server | Cyan → Green (sent) / Yellow (stored offline) |
 
 ### Module Structure
 
@@ -370,7 +373,8 @@ Or from Particle Console: https://console.particle.io/devices
 | `MEASUREMENT_TIMEOUT_MS` | 300000 | 5-minute timeout for user response |
 | `DEFAULT_START_HOUR` | 6 | Active window start (6 AM) |
 | `DEFAULT_END_HOUR` | 22 | Active window end (10 PM) |
-| `MAX_STORED_MEASUREMENTS` | 48 | Offline storage capacity |
+| `MAX_STORED_MEASUREMENTS` | 48 | Offline measurement storage capacity |
+| `MAX_STORED_TIMEOUTS` | 24 | Offline timeout notification storage |
 
 ### Server-Controlled Configuration
 
@@ -457,8 +461,9 @@ For Vercel, replace `http://localhost:4000` with `https://heart-rate-monitor-iot
 | Blue | Solid | Measurement in progress |
 | Blue | Pulsing | Stabilizing/calculating |
 | Cyan | Solid | Transmitting data |
-| Green | Single flash | Measurement sent successfully |
-| Yellow | Single flash | Measurement stored locally (offline) |
+| Green | Single flash | Data sent successfully to server |
+| Yellow | Single flash | Data stored locally (offline mode) |
+| Green | Single flash (sync) | Stored data synced to server |
 | Red | Rapid blink | Error condition |
 
 ---
@@ -474,6 +479,28 @@ For Vercel, replace `http://localhost:4000` with `https://heart-rate-monitor-iot
 1. Verify SSID and password are correct in `config.h`
 2. Ensure network is 2.4GHz (Photon 2 supports both 2.4/5GHz)
 3. Check WiFi signal strength via serial output (RSSI)
+4. Note: Particle devices persist WiFi credentials - old networks may auto-connect
+
+### Testing Offline Mode
+To test offline functionality:
+1. **Option A:** Uncomment `WiFi.clearCredentials();` in setup(), flash, then comment it back
+2. **Option B:** Use invalid WiFi credentials in `config.h`
+3. **Option C:** Turn off your WiFi router
+
+When offline, you should see:
+```
+WiFi Not Connected - offline mode
+...
+No connection - storing measurement locally
+Measurement STORED locally (1/48)
+```
+
+When WiFi reconnects:
+```
+WiFi reconnected - will retry config fetch
+Syncing stored measurement to server...
+Stored measurement synced successfully (X remaining)
+```
 
 ### Measurements Not Transmitting (Local Mode)
 1. Verify `API_SERVER_HOST` is your computer's IP (not localhost)
