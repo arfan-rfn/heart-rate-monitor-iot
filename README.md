@@ -5,8 +5,9 @@
 A comprehensive IoT system for monitoring heart rate and blood oxygen saturation throughout the day using a Particle Photon device, Node.js backend, and responsive web application.
 
 ## Hosted Links
-- FrontEnd: https://heart-rate-monitor-iot-6z2z-gxu4n731p.vercel.app
-- BackEnd: https://heart-rate-monitor-iot.vercel.app
+- Frontend: https://heart-rate-monitor-iot-6z2z-gxu4n731p.vercel.app
+- Backend: https://heart-rate-monitor-iot.vercel.app
+- Backend Health Check: https://heart-rate-monitor-iot.vercel.app/health
 
 ---
 
