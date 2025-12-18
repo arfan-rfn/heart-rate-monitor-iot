@@ -3,6 +3,8 @@
 **ECE 413/513 Final Project**
 
 A comprehensive IoT system for monitoring heart rate and blood oxygen saturation throughout the day using a Particle Photon device, Node.js backend, and responsive web application.
+FrontEnd: https://heart-rate-monitor-iot-6z2z-gxu4n731p.vercel.app
+BackEnd: https://heart-rate-monitor-iot.vercel.app
 
 ---
 
